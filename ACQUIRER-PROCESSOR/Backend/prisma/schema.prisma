@@ -1,0 +1,208 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MerchantStatus {
+  PENDING
+  ACTIVE
+  SUSPENDED
+  CLOSED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  CAPTURED
+  DECLINED
+  CANCELED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+enum PaymentMethodType {
+  CARD
+}
+
+enum AttemptStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  FAILED
+}
+
+enum PaymentEventType {
+  PAYMENT_CREATED
+  AUTHORIZATION_REQUESTED
+  AUTHORIZATION_APPROVED
+  AUTHORIZATION_DECLINED
+  CAPTURE_REQUESTED
+  CAPTURED
+  CANCELLATION_REQUESTED
+  CANCELED
+  REFUND_REQUESTED
+  REFUNDED
+}
+
+enum CaptureStatus {
+  PENDING
+  CAPTURED
+  FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  REFUNDED
+  FAILED
+}
+
+
+model Merchant {
+  id               Int              @id @default(autoincrement())
+  name             String
+  legalName        String?
+  status           MerchantStatus   @default(PENDING)
+  country          String
+  defaultCurrency  String
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  merchantAccounts MerchantAccount[]
+
+  @@index([status])
+}
+
+
+model  MerchantAccount {
+  id             Int       @id @default(autoincrement())
+  merchantId     Int
+  accountCode    String    @unique
+  country        String
+  currency       String
+  status         MerchantStatus @default(PENDING)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  merchant       Merchant  @relation(fields: [merchantId], references: [id])
+  payments       Payment[]
+
+  @@index([merchantId])
+}
+
+
+model Payment {
+  id                Int            @id @default(autoincrement())
+  merchantAccountId Int
+  merchantReference String
+  checkoutSessionId String         @unique
+  amount            Decimal        @db.Decimal(18, 2)
+  currency          String
+  status            PaymentStatus  @default(PENDING)
+  paymentMethodId   Int?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  successUrl        String
+  cancelUrl         String
+  webhookUrl        String
+
+  merchantAccount   MerchantAccount @relation(fields: [merchantAccountId], references: [id])
+  paymentMethod     PaymentMethod?   @relation(fields: [paymentMethodId], references: [id])
+  attempts          PaymentAttempt[]
+  events            PaymentEvent[]
+  captures          Capture[]
+  refunds           Refund[]
+
+  @@index([merchantAccountId])
+  @@index([merchantReference])
+  @@index([status])
+}
+
+
+model PaymentMethod {
+  id          Int               @id @default(autoincrement())
+  type        PaymentMethodType
+  token       String            @unique
+  brand       String?
+  last4      String
+  expMonth    Int
+  expYear     Int
+  createdAt   DateTime          @default(now())
+
+  payments    Payment[]
+}
+
+
+model PaymentAttempt {
+  id                Int           @id @default(autoincrement())
+  paymentId         Int
+  status            AttemptStatus @default(PENDING)
+  amount            Decimal       @db.Decimal(18, 2)
+  authorizationId   String?
+  networkReference  String?
+  responseCode      String?
+  responseMessage   String?
+  createdAt         DateTime      @default(now())
+
+  payment           Payment       @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([authorizationId])
+  @@index([networkReference])
+}
+
+
+model PaymentEvent {
+  id          Int              @id @default(autoincrement())
+  paymentId   Int
+  type        PaymentEventType
+  reference   String?
+  metadata    Json?
+  createdAt   DateTime         @default(now())
+
+  payment     Payment          @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+  @@index([type])
+}
+
+
+model Capture {
+  id          Int           @id @default(autoincrement())
+  paymentId   Int
+  amount      Decimal       @db.Decimal(18, 2)
+  currency    String
+  status      CaptureStatus @default(PENDING)
+  reference   String?
+  createdAt   DateTime      @default(now())
+
+  payment     Payment       @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+}
+
+
+model Refund {
+  id          Int          @id @default(autoincrement())
+  paymentId   Int
+  amount      Decimal     @db.Decimal(18, 2)
+  currency    String
+  status      RefundStatus @default(PENDING)
+  reason      String?
+  reference   String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  payment     Payment     @relation(fields: [paymentId], references: [id])
+
+  @@index([paymentId])
+}

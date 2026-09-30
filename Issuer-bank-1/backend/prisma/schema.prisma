@@ -1,0 +1,256 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+
+
+enum CustomerStatus {
+  ACTIVE
+  BLOCKED
+  CLOSED
+}
+
+
+enum UserRole {
+  admin
+  user
+}
+
+model Customer {
+  id          Int            @id @default(autoincrement())
+  firstName   String
+  lastName    String
+  email       String         @unique
+  phone       String         @unique
+  password    String
+  confirmPassword String
+  status      CustomerStatus @default(ACTIVE)
+  role         UserRole @default(user)
+
+  isDeleted Boolean  @default(false)
+  deletedAt DateTime?
+
+  accounts    Account[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+
+
+enum AccountStatus {
+  ACTIVE
+  BLOCKED
+  CLOSED
+}
+
+enum Currency {
+  MAD
+  USD
+  EUR
+}
+
+model Account {
+  id               Int           @id @default(autoincrement())
+  accountNumber    String        @unique
+  balance          Decimal       @db.Decimal(18, 2)
+  availableBalance Decimal       @db.Decimal(18, 2)
+  currency         Currency
+  status           AccountStatus @default(ACTIVE)
+
+  customerId       Int
+  customer         Customer      @relation(fields: [customerId], references: [id])
+
+  cards            Card[]
+  ledgerEntries    LedgerEntry[]
+  refundRequests RefundRequest[]
+
+  moneyRequestsSent     MoneyRequest[] @relation("MoneyRequestRequester")
+  moneyRequestsReceived MoneyRequest[] @relation("MoneyRequestRecipient")
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  @@index([customerId])
+}
+
+
+
+
+enum CardStatus {
+  ACTIVE
+  BLOCKED
+  EXPIRED
+  CANCELED
+}
+
+enum CardType {
+  DEBIT
+  CREDIT
+}
+
+enum CardBrand {
+  VISA
+  MASTERCARD
+}
+
+
+model Card {
+  id           Int        @id @default(autoincrement())
+
+  cardNumber   String     @unique
+  brand        CardBrand
+  type         CardType
+
+  expMonth     Int
+  expYear      Int
+
+  cvv          String
+  status       CardStatus @default(ACTIVE)
+
+  accountId    Int
+  account      Account    @relation(fields: [accountId], references: [id])
+
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([accountId])
+}
+
+
+
+
+
+enum TransactionType {
+  transfer
+  deposit
+  withdrawal
+  payment
+  refund
+  fee
+}
+
+enum TransactionStatus {
+  pending
+  processing
+  completed
+  failed
+  cancelled
+  reversed
+}
+
+model Transaction {
+  id          Int               @id @default(autoincrement())
+  reference   String            @unique
+
+  type        TransactionType
+  status      TransactionStatus @default(pending)
+
+  amount      Decimal           @db.Decimal(19, 4)
+  currency    String            @db.VarChar(3)
+  description String
+
+  ledgerEntries LedgerEntry[]
+  refundRequest RefundRequest?
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+
+
+enum LedgerEntryType {
+  debit
+  credit
+}
+
+model LedgerEntry {
+  id            Int               @id @default(autoincrement())
+
+  transactionId Int
+  transaction   Transaction       @relation(fields: [transactionId] , references: [id])
+
+  accountId     Int
+  account       Account           @relation(fields: [accountId] , references: [id])
+
+  type          LedgerEntryType
+  amount        Decimal           @db.Decimal(19, 4)
+  currency      String            @db.VarChar(3)
+
+  createdAt     DateTime          @default(now())
+
+  @@index([transactionId])
+  @@index([accountId])
+  @@index([createdAt])
+}
+
+
+
+enum MoneyRequestStatus {
+  pending
+  accepted
+  rejected
+  cancelled
+}
+
+
+model MoneyRequest {
+  id                 Int                @id @default(autoincrement())
+  amount             Decimal            @db.Decimal(19, 4)
+  currency           String             @db.VarChar(3)
+  description        String
+  status             MoneyRequestStatus @default(pending)
+
+  requesterAccountId Int
+  recipientAccountId Int
+
+  requester          Account            @relation("MoneyRequestRequester", fields: [requesterAccountId], references: [id])
+  recipient          Account            @relation("MoneyRequestRecipient", fields: [recipientAccountId], references: [id])
+
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+
+  @@index([requesterAccountId])
+  @@index([recipientAccountId])
+  @@index([status])
+}
+
+
+
+enum RefundRequestStatus {
+  pending
+  approved
+  rejected
+}
+
+model RefundRequest {
+  id            Int                  @id @default(autoincrement())
+
+  transactionId Int                  @unique
+  accountId     Int
+
+  amount        Decimal              @db.Decimal(19, 4)
+  reason        String
+  status        RefundRequestStatus  @default(pending)
+
+  transaction   Transaction          @relation(fields: [transactionId],references: [id])
+
+  account       Account              @relation(fields: [accountId],references: [id])
+
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+}

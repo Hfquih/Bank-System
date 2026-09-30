@@ -1,0 +1,239 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+.account-management-container {
+ display: grid;
+ gap: 24px;
+ width: 100%;
+ padding: 24px;
+ border-radius: 24px;
+ background: linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+ border: 1px solid rgba(148, 163, 184, 0.2);
+ box-shadow: 0 24px 60px rgba(15, 23, 42, 0.08);
+ font-family: 'Inter', sans-serif;
+}
+
+.account-management-header {
+ display: flex;
+ align-items: center;
+ justify-content: space-between;
+ gap: 16px;
+}
+
+.account-management-eyebrow {
+ margin-bottom: 8px;
+ font-size: 0.72rem;
+ font-weight: 700;
+ letter-spacing: 0.12em;
+ text-transform: uppercase;
+ color: #2563eb;
+}
+
+.account-management-header h3 {
+ margin: 0;
+ font-size: clamp(1.6rem, 2.2vw, 2.1rem);
+ line-height: 1.2;
+ letter-spacing: -0.04em;
+ color: #0f172a;
+}
+
+.account-status-badge {
+ display: inline-flex;
+ align-items: center;
+ justify-content: center;
+ min-width: 96px;
+ padding: 0.6rem 0.9rem;
+ border-radius: 999px;
+ border: 1px solid transparent;
+ font-size: 0.74rem;
+ font-weight: 700;
+ text-transform: capitalize;
+}
+
+.account-status-badge.active {
+ background: #dcfce7;
+ color: #15803d;
+ border-color: rgba(21, 128, 61, 0.16);
+}
+
+.account-status-badge.frozen,
+.account-status-badge.closed {
+ background: #fef2f2;
+ color: #b91c1c;
+ border-color: rgba(185, 28, 28, 0.12);
+}
+
+.account-highlight-card {
+ display: grid;
+ grid-template-columns: minmax(0, 1.2fr) minmax(0, 1.8fr);
+ gap: 24px;
+ padding: 22px 24px;
+ border-radius: 20px;
+ background: linear-gradient(135deg, #0f172a 0%, #1d4ed8 100%);
+ color: #fff;
+ box-shadow: 0 20px 40px rgba(37, 99, 235, 0.2);
+}
+
+.account-highlight-copy,
+.account-balance-summary {
+ display: flex;
+ flex-direction: column;
+}
+
+.account-highlight-copy {
+ justify-content: center;
+ gap: 10px;
+}
+
+.account-label,
+.account-stat-label {
+ display: block;
+ font-size: 0.71rem;
+ font-weight: 700;
+ letter-spacing: 0.12em;
+ text-transform: uppercase;
+ opacity: 0.8;
+}
+
+.account-highlight-copy strong {
+ font-size: clamp(1.2rem, 2vw, 1.7rem);
+ letter-spacing: -0.04em;
+ word-break: break-all;
+}
+
+.account-balance-summary {
+ display: grid;
+ grid-template-columns: repeat(2, minmax(0, 1fr));
+ gap: 18px;
+}
+
+.account-balance-summary div {
+ padding: 16px 18px;
+ border-radius: 16px;
+ background: rgba(255, 255, 255, 0.09);
+ border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.account-balance-summary span {
+ display: block;
+ margin-bottom: 10px;
+ font-size: 0.72rem;
+ letter-spacing: 0.08em;
+ text-transform: uppercase;
+ color: rgba(255, 255, 255, 0.72);
+}
+
+.account-balance-summary strong {
+ font-size: clamp(1.05rem, 1.6vw, 1.5rem);
+ letter-spacing: -0.03em;
+}
+
+.account-stat-grid {
+ display: grid;
+ grid-template-columns: repeat(4, minmax(0, 1fr));
+ gap: 16px;
+}
+
+.account-stat-card {
+ display: flex;
+ flex-direction: column;
+ gap: 10px;
+ padding: 18px 18px 16px;
+ border-radius: 18px;
+ background: #ffffff;
+ border: 1px solid #e2e8f0;
+ box-shadow: 0 10px 30px rgba(15, 23, 42, 0.04);
+}
+
+.account-stat-card strong {
+ font-size: 1.02rem;
+ color: #0f172a;
+ letter-spacing: -0.02em;
+ word-break: break-word;
+}
+
+.account-stat-card small {
+ color: #64748b;
+ font-size: 0.74rem;
+}
+
+.account-details-panel {
+ padding: 22px 24px;
+ border-radius: 20px;
+ background: #f8fafc;
+ border: 1px solid #e2e8f0;
+}
+
+.account-panel-header h4 {
+ margin: 0 0 18px;
+ font-size: 1.1rem;
+ color: #0f172a;
+}
+
+.account-detail-list {
+ display: grid;
+ grid-template-columns: repeat(3, minmax(0, 1fr));
+ gap: 16px;
+ margin: 0;
+}
+
+.account-detail-list div {
+ display: flex;
+ flex-direction: column;
+ gap: 8px;
+ padding: 16px 18px;
+ border-radius: 14px;
+ background: #ffffff;
+ border: 1px solid #e2e8f0;
+}
+
+.account-detail-list dt {
+ font-size: 0.72rem;
+ font-weight: 700;
+ text-transform: uppercase;
+ letter-spacing: 0.08em;
+ color: #64748b;
+}
+
+.account-detail-list dd {
+ margin: 0;
+ font-size: 0.98rem;
+ font-weight: 600;
+ color: #0f172a;
+}
+
+.account-detail-status {
+ text-transform: capitalize;
+ color: #15803d;
+}
+
+@media (max-width: 900px) {
+ .account-highlight-card,
+ .account-stat-grid,
+ .account-detail-list {
+   grid-template-columns: 1fr 1fr;
+ }
+}
+
+@media (max-width: 640px) {
+ .account-management-container {
+   padding: 18px;
+ }
+
+ .account-management-header,
+ .account-highlight-card,
+ .account-balance-summary,
+ .account-stat-grid,
+ .account-detail-list {
+   grid-template-columns: 1fr;
+   display: grid;
+ }
+
+ .account-management-header {
+   justify-content: stretch;
+ }
+
+ .account-status-badge {
+   justify-self: start;
+ }
+}
+

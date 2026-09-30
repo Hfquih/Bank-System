@@ -1,0 +1,435 @@
+import { StatusCodes } from "http-status-codes";
+import Unauthorized from '../errors/Unauthorized'
+import BadRequest from "../errors/BadRequest";
+import NotFound from "../errors/NotFound";
+import { createJWT , hashPass , comparePasse } from "../util/util";
+import { Request , Response } from "express";
+import crypto from "crypto";
+
+//import {PrismaClient , Prisma} from '../generated/prisma/client.js'
+import { PrismaPg } from '@prisma/adapter-pg'
+
+import { PrismaClient, Prisma , LedgerEntryType, Transaction, TransactionStatus, TransactionType } from "../../generated/prisma/client.js";
+import da from "zod/v4/locales/da.js";
+import { TransactionCreateInput, TransactionWhereInput } from "../../generated/prisma/models";
+
+
+
+
+
+const databaseUrl = process.env.DATABASE_URL
+
+if (!databaseUrl) {
+  throw new Error('DATABASE_URL is missing')
+}
+
+const prisma = new PrismaClient({
+  adapter: new PrismaPg({
+    connectionString: databaseUrl
+  })
+})
+
+
+export const register = async (req : Request , res : Response) => {
+  const {firstName , lastName , email , phone , password , confirmPassord} = req.body 
+
+  const hashedPass = await hashPass(password)
+
+  function generateAccountNumber(): string {
+    return Math.floor(
+      100000000000 + Math.random() * 900000000000
+    ).toString();
+  }
+
+  await prisma.$transaction(async(tx)=>{
+    const customer = await tx.customer.create({
+      data : {
+        firstName,
+        lastName,
+        email,
+        phone,
+        password:hashedPass,
+        confirmPassword:hashedPass
+      }
+    })
+
+    await tx.account.create({
+      data:{
+        accountNumber : generateAccountNumber(),
+        balance:0,
+        availableBalance:0,
+        currency:"USD",
+        customerId:customer.id
+      }
+    })
+  })
+
+  return(res.status(StatusCodes.CREATED).json({msg : "account created"}))
+}
+
+
+export const login = async (req : Request , res : Response) => {
+  const {email , password} = req.body
+
+  if(!email || !password){
+    throw new BadRequest("please provide all info")
+  }
+
+  const customer = await prisma.customer.findFirst({
+    where : {
+      email,
+      status:"ACTIVE"
+    }
+  })
+
+  if(!customer){
+    throw new Unauthorized("invalid credential")
+  }
+
+  const match = await comparePasse(password , customer.password)
+
+  if(!match){
+    throw new Unauthorized("invalid credential")
+  }
+
+  if(customer.isDeleted){
+    throw new Unauthorized("account disabled")
+  }
+
+  const token = createJWT(customer)
+
+  res.cookie("accessToken", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 24 * 60 * 60 * 1000
+  });
+
+  res.status(StatusCodes.OK).json({msg : `welcome ${customer.firstName}`})
+
+}
+
+export const logout = async (req: Request, res: Response) => {
+    
+    res.clearCookie("accessToken", {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+    });
+
+    res.status(200).json({
+        msg: "Logged out successfully",
+    });
+
+}
+
+
+export const getCustomer = async (req : Request , res : Response) => {
+  const customerId = (req.user as { id: number }).id
+
+  const customer = await prisma.customer.findUnique({
+    where : {
+      id : customerId
+    }
+  })
+
+  if(!customer){
+    throw new NotFound("customer not found")
+  }
+
+  res.status(StatusCodes.OK).json({customer})
+}
+
+
+export const updateCustomer = async (req : Request , res : Response) =>{
+  const customerId = (req.user as { id: number }).id
+
+  const customer = await prisma.customer.findUnique({
+    where : {
+      id : customerId
+    }
+  })
+
+  if(!customer){
+    throw new NotFound("customer not found")
+  }
+
+  const {firstName , lastName , email , phone , password , confirmPassword} = req.body
+
+
+  const data : {
+    firstName?:string,
+    lastName?:string,
+    email?:string,
+    phone?:string,
+    password?:string,
+    confirmPassword?:string
+  }={
+    firstName,
+    lastName,
+    email,
+    phone
+  }
+
+  if(password && confirmPassword){
+    data.password = await hashPass(password),
+    data.confirmPassword=await hashPass(confirmPassword)
+  }
+
+  await prisma.customer.update({
+    where:{
+      id : customer.id
+    },
+    data
+  })
+
+  res.status(StatusCodes.OK).json({msg:"Info updated"})
+}
+
+
+export const getAccount = async (req : Request , res:Response) => {
+  const customerId = (req.user as { id: number }).id
+
+  const account = await prisma.account.findFirst({
+    where:{
+      customerId : customerId,
+      status : "ACTIVE"
+    },
+    include : {
+      customer : true
+    }
+  })
+
+  if(!account){
+    throw new NotFound("Account not found")
+  }
+
+  res.status(StatusCodes.OK).json({account})
+}
+
+
+export const createTransaction = async (req : Request , res : Response) =>{
+  const customerId = (req.user as { id: number }).id
+
+  const debitAccount = await prisma.account.findFirst({
+    where : {
+      customerId : customerId,
+      status:"ACTIVE"
+    }
+  })
+
+  if(!debitAccount){
+    throw new NotFound("account not found")
+  }
+
+
+  const {amount , accountNumber , description} = req.body 
+
+  if (debitAccount.balance.lt(amount)) {
+    throw new BadRequest("Insufficient balance")
+  }
+
+  const creditAccount = await prisma.account.findFirst({
+    where : {
+      accountNumber : accountNumber,
+      status:"ACTIVE"
+    }
+  })
+
+  if(!creditAccount){
+    throw new NotFound("account not found")
+  }
+
+  if (debitAccount.id === creditAccount.id) {
+    throw new BadRequest("You cannot transfer money to yourself")
+  }
+
+  const reference = `TRX-${crypto.randomUUID()}`;
+
+  const TransactionData : TransactionCreateInput = {
+    reference,
+    type:"transfer",
+    amount, 
+    currency:"USD",
+    description:description
+  }
+
+
+  await prisma.$transaction(async (tx)=>{
+    const transaction = await tx.transaction.create({
+      data:TransactionData
+    })
+
+    await tx.ledgerEntry.create({
+      data:{
+        transactionId : transaction.id,
+        accountId : debitAccount.id,
+        type:"debit",
+        amount:transaction.amount,
+        currency:transaction.currency
+      }
+    })
+
+    await tx.ledgerEntry.create({
+      data:{
+        transactionId : transaction.id,
+        accountId : creditAccount.id,
+        type:"credit",
+        amount:transaction.amount,
+        currency:transaction.currency
+      }
+    })
+
+    await tx.account.update({
+      where :{
+        id: debitAccount.id
+      },
+      data:{
+        balance : {decrement : amount},
+        availableBalance : {decrement : amount}
+      }
+    })
+
+    await tx.account.update({
+      where :{
+        id: creditAccount.id
+      },
+      data:{
+        balance : {increment : amount},
+        availableBalance : {increment : amount}
+      }
+    })
+
+    await tx.transaction.update({
+      where : {
+        id : transaction.id
+      },
+      data:{
+        status:"completed"
+      }
+    })
+  })
+
+  res.status(StatusCodes.OK).json({msg:'Transaction completed'})
+  
+}
+
+
+export const createRequest = async (req : Request , res : Response) => {
+  const customerId = (req.user as { id: number }).id
+
+  const requesterAccount = await prisma.account.findFirst({
+    where : {
+      customerId : customerId,
+      status : "ACTIVE"
+    }
+  })
+
+  if(!requesterAccount){
+    throw new NotFound("sorry, we dont found this account")
+  }
+
+  const {amount , accountNumber , description} = req.body 
+
+  const recipientAccount = await prisma.account.findFirst({
+    where:{
+      accountNumber:accountNumber,
+      status:"ACTIVE"
+    }
+  })
+
+  if(!recipientAccount){
+    throw new NotFound("sorry, we dont found this account")
+  }
+
+  if (requesterAccount.id === recipientAccount.id) {
+    throw new BadRequest("You cannot request money from yourself")
+  }
+
+  await prisma.moneyRequest.create({
+    data:{
+      amount:amount,
+      currency:"USD",
+      description:description,
+      requesterAccountId:requesterAccount.id,
+      recipientAccountId:recipientAccount.id,
+
+    }
+  })
+
+  res.status(StatusCodes.CREATED).json({msg:"request money created"})
+}
+
+
+export const getTransaction = async (req : Request , res : Response) => {
+  const customerId = (req.user as { id: number }).id
+  const {search , type , status , transferType} = req.query
+  const queryObject :Prisma.LedgerEntryWhereInput = {}
+
+  if(type && Object.values(LedgerEntryType).includes(type as LedgerEntryType)){
+        queryObject.type = type as LedgerEntryType
+    }
+
+    if(status && Object.values(TransactionStatus).includes(status as TransactionStatus)){
+        queryObject.transaction ={status : status as TransactionStatus}
+    }
+
+    if(transferType && Object.values(TransactionType).includes(transferType as TransactionType)){
+        queryObject.transaction = {type : transferType as TransactionType}
+    }
+
+   if(typeof search === "string" && search.trim()){
+        queryObject.transaction={reference:{ contains : search , mode:"insensitive"}}
+    }
+
+
+  const account = await prisma.account.findFirst({
+    where : {
+      customerId : customerId
+    }
+  })
+
+  if(!account){
+    throw new NotFound("we dont found this account")
+  }
+  
+  const debitTransaction = await prisma.ledgerEntry.findMany({
+    where : {
+      accountId : account.id,
+      transaction : {
+        type : "transfer"
+      }
+    }
+  })
+
+  res.status(StatusCodes.OK).json({debitTransaction})
+}
+
+export const getRequest = async(req : Request , res : Response) => {
+  const customerId = (req.user as { id: number }).id
+
+  const account = await prisma.account.findFirst({
+    where:{
+      customerId : customerId,
+      status : "ACTIVE"
+    }
+  })
+
+  if(!account){
+    throw new NotFound("account not found")
+  }
+
+  const debitRequest = await prisma.moneyRequest.findMany({
+    where : {
+      recipientAccountId : account.id
+    }
+  })
+
+  const creditRequest = await prisma.moneyRequest.findMany({
+    where : {
+      requesterAccountId : account.id
+    }
+  })
+
+  res.status(StatusCodes.OK).json({debitRequest , creditRequest})
+}

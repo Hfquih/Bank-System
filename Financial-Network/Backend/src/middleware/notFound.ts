@@ -1,0 +1,6 @@
+import { StatusCodes } from "http-status-codes";
+import { Request , Response } from "express";
+
+const notFound =  (req : Request , res : Response) => res.status(StatusCodes.NOT_FOUND).send('sorry we dont found this route')
+
+export default notFound

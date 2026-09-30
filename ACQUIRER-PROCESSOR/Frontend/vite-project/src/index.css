@@ -1,0 +1,21 @@
+*{
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.alert{
+  text-align: center;
+}
+
+.text-success{
+  color: darkgreen;
+  font-weight: bold;
+  font-size: 0.8rem;
+}
+
+.text-error{
+  color: darkred;
+  font-weight: bold;
+  font-size: 0.8rem;
+}

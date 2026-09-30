@@ -1,0 +1,227 @@
+@import url('https://fonts.googleapis.com/css?family=Montserrat:400|Inconsolata:400');
+
+:root {
+  /* COLORS  */
+  /* primary */
+  --primary-0: #eef5ff;
+  --primary-50: #dceaff;
+  --primary-100: #c5dcff;
+  --primary-200: #aecfff;
+  --primary-300: #91baff;
+  --primary-400: #6fa2f5;
+  /* main */
+  --primary-500: #2563eb;
+  --primary-600: #1d4ed8;
+  --primary-700: #1e40af;
+  --primary-800: #1e3a8a;
+  --primary-900: #172554;
+  --primary-1000: #0f1b3d;
+  --primary-1100: #071126;
+  --primary-1200: #0ea5e9;
+  --primary-dark: #1e40af;
+  --primary-light: #a9bddc;
+
+  /* grey */
+  --grey-0: #ffffff;
+  --grey-50: #f8fafc;
+  --grey-100: #f1f5f9;
+  --grey-200: #e2e8f0;
+  --grey-300: #cbd5e1;
+  --grey-400: #b8c4d3;
+  --grey-500: #94a3b8;
+  --grey-600: #64748b;
+  --grey-700: #475569;
+  --grey-800: #334155;
+  --grey-900: #1e293b;
+  --grey-1000: #0f172a;
+  --grey-1100: #020617;
+
+  /* rest */
+  --black: #020617;
+  --white: #fff;
+  --red-light: #fee2e2;
+  --red-dark: #b91c1c;
+  --green-light: #dcfce7;
+  --green-dark: #15803d;
+
+  /* typography */
+  --headingFont: 'Inconsolata', monospace;
+  --bodyFont: 'Montserrat', sans-serif;
+  --smallText: 0.7em;
+
+  /* rest */
+  --backgroundColor: var(--grey-50);
+  --textColor: var(--grey-1000);
+  --borderRadius: 0.25rem;
+  --letterSpacing: 1px;
+  --transition: 0.3s ease-in-out all;
+  --max-width: 1120px;
+  --fixed-width: 600px;
+
+  /* box shadows */
+  --shadow-1: 0 1px 3px 0 rgba(15, 23, 42, 0.1),
+    0 1px 2px 0 rgba(15, 23, 42, 0.06);
+
+  --shadow-2: 0 4px 6px -1px rgba(15, 23, 42, 0.1),
+    0 2px 4px -1px rgba(15, 23, 42, 0.06);
+
+  --shadow-3: 0 10px 15px -3px rgba(15, 23, 42, 0.1),
+    0 4px 6px -2px rgba(15, 23, 42, 0.05);
+
+  --shadow-4: 0 20px 25px -5px rgba(15, 23, 42, 0.1),
+    0 10px 10px -5px rgba(15, 23, 42, 0.04);
+}
+
+
+*{
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.user-movement-container {
+  width: 100%;
+  padding: clamp(1rem, 3vw, 2rem);
+  border: 1px solid var(--grey-200);
+  border-radius: 1rem;
+  background: var(--white);
+}
+
+.user-movement-header h1 {
+  margin-top: 0.4rem;
+  font-family: var(--headingFont);
+  font-size: clamp(1.7rem, 3vw, 2.4rem);
+  font-weight: 400;
+}
+
+.user-movement-header p:last-child,
+.user-movement-form-heading p {
+  margin-top: 0.45rem;
+  color: var(--grey-600);
+  font-size: 0.9rem;
+}
+
+.user-movement-actions {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 1.75rem 0;
+}
+
+.user-movement-action {
+  min-height: 5.5rem;
+  padding: 0.8rem;
+  border: 1px solid var(--grey-200);
+  border-radius: var(--borderRadius);
+  background: var(--grey-50);
+  color: var(--grey-800);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.user-movement-action span,
+.user-movement-action small {
+  display: block;
+}
+
+.user-movement-action span {
+  font-weight: 700;
+}
+
+.user-movement-action small {
+  margin-top: 0.45rem;
+  color: var(--grey-600);
+  font-size: 0.7rem;
+  line-height: 1.35;
+}
+
+.user-movement-action:hover,
+.user-movement-action.is-active {
+  border-color: var(--primary-500);
+  background: var(--primary-0);
+  color: var(--primary-700);
+}
+
+.user-movement-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  max-width: 42rem;
+}
+
+.user-movement-form-heading,
+.user-movement-description,
+.user-movement-status,
+.user-movement-submit {
+  grid-column: 1 / -1;
+}
+
+.user-movement-form-heading h2 {
+  font-family: var(--headingFont);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
+.user-movement-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  color: var(--grey-800);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.user-movement-form input,
+.user-movement-form textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--grey-300);
+  border-radius: var(--borderRadius);
+  background: var(--white);
+  color: var(--textColor);
+  font: inherit;
+}
+
+.user-movement-form input:focus,
+.user-movement-form textarea:focus {
+  outline: 2px solid var(--primary-200);
+  border-color: var(--primary-500);
+}
+
+.user-movement-submit {
+  padding: 0.8rem 1.2rem;
+  border: 0;
+  border-radius: var(--borderRadius);
+  background: var(--primary-600);
+  color: var(--white);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  transition: var(--transition);
+}
+
+.user-movement-submit:hover,
+.user-movement-submit:focus-visible {
+  background: var(--primary-700);
+}
+
+.user-movement-submit:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+@media (max-width: 800px) {
+  .user-movement-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 500px) {
+  .user-movement-actions,
+  .user-movement-form {
+    grid-template-columns: 1fr;
+  }
+}
+
