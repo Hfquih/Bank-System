@@ -55,12 +55,11 @@ export default function Login(){
                 msg:data.msg , success:true , error:false
             })
 
-            refreshUser()
-
             setTimeout(()=>{
                 sertAlert({
                     msg:"" , success:false , error:true
                 })
+                refreshUser()
                 navigate('/')
             },3000)
             

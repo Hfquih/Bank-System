@@ -72,6 +72,7 @@ model Account {
   availableBalance Decimal
   currency         String
   status           AccountStatus @default(active)
+  apiBaseUrl        String
 
   userId           Int           @unique
   user             User          @relation(fields: [userId], references: [id])

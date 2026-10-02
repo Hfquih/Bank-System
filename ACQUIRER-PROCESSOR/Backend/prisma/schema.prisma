@@ -114,6 +114,7 @@ model Payment {
   successUrl        String
   cancelUrl         String
   webhookUrl        String
+  apiBaseUrl        String
 
   merchantAccount   MerchantAccount @relation(fields: [merchantAccountId], references: [id])
   paymentMethod     PaymentMethod?   @relation(fields: [paymentMethodId], references: [id])

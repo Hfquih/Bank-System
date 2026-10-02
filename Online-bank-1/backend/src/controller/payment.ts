@@ -70,6 +70,7 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
             country: "US",
             currency: findData.account.currency,
             status: findData.account.status,
+            apiBaseUrl:findData.account.apiBaseUrl
         },
 
         payment: {
@@ -77,7 +78,8 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
             amount: amount,
             currency,
             successUrl,
-            cancelUrl
+            cancelUrl,
+            webhookUrl
         },
     };
 

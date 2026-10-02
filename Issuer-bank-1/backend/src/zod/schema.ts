@@ -114,3 +114,9 @@ export const moneyOperationSchema = z.object({
     .string()
     .optional(),
 });
+
+
+export const createCardSchema = z.object({
+  type: z.enum(["DEBIT", "CREDIT"]),
+  brand: z.enum(["VISA", "MASTERCARD"])
+})

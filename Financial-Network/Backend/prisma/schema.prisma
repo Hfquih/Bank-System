@@ -11,3 +11,107 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+
+
+model FinancialNetwork {
+  id        Int    @id @default(autoincrement())
+  name      String @unique
+  code      String @unique
+
+  brands    NetworkBrand[]
+  issuers   Issuer[]
+  binRanges BINRange[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+
+
+enum NetworkBrandStatus {
+  ACTIVE
+  INACTIVE
+}
+
+
+model NetworkBrand {
+  id          Int    @id @default(autoincrement())
+  name        String
+  code        String @unique
+  status      NetworkBrandStatus @default(ACTIVE)
+
+  networkId   Int
+  network     FinancialNetwork @relation(fields: [networkId],references: [id])
+
+  binRanges BINRange[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([networkId])
+}
+
+
+
+enum IssuerStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+model Issuer {
+  id          Int    @id @default(autoincrement())
+  name        String
+  code        String @unique
+  country     String
+  status      IssuerStatus @default(ACTIVE)
+  baseUrl     String
+
+  networkId   Int
+  network     FinancialNetwork @relation(fields: [networkId],references: [id])
+
+  binRanges BINRange[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([networkId])
+}
+
+
+
+enum BINRangeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model BINRange {
+  id          Int    @id @default(autoincrement())
+
+  start       String
+  end         String
+  length      Int
+
+  status      BINRangeStatus @default(ACTIVE)
+
+  networkId   Int
+  network     FinancialNetwork @relation(fields: [networkId],references: [id])
+
+  brandId     Int
+  brand       NetworkBrand @relation(fields: [brandId],references: [id])
+
+  issuerId    Int
+  issuer      Issuer @relation(fields: [issuerId],references: [id])
+
+  country     String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([networkId])
+  @@index([brandId])
+  @@index([issuerId])
+  @@index([start])
+  @@index([end])
+}

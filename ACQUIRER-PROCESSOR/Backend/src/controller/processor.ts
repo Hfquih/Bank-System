@@ -45,7 +45,8 @@ export const createPaymentSession = async (req : Request , res : Response) => {
                 amount : payment.amount,
                 successUrl:payment.successUrl,
                 cancelUrl:payment.cancelUrl,
-                webhookUrl:payment.webhookUrl
+                webhookUrl:payment.webhookUrl,
+                apiBaseUrl:merchantAccount.apiBaseUrl
             }
         })
 
@@ -80,7 +81,8 @@ export const createPaymentSession = async (req : Request , res : Response) => {
                 amount : payment.amount,
                 successUrl:payment.successUrl,
                 cancelUrl:payment.cancelUrl,
-                webhookUrl:payment.webhookUrl
+                webhookUrl:payment.webhookUrl,
+                apiBaseUrl:merchantAccount.apiBaseUrl
             }
         })
 
@@ -96,7 +98,8 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
 
     const findPayment = await prisma.payment.findUnique({
         where:{
-            checkoutSessionId : String(sessionId)
+            checkoutSessionId : String(sessionId),
+            paymentMethodId:null
         },
         include:{
             merchantAccount:true
@@ -155,6 +158,13 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
             }
         })
         await axios.patch(findPayment.webhookUrl , {
+            paymentId: findPayment.id,
+            orderReference: findPayment.merchantReference,
+            status: "APPROVED",
+            amount: findPayment.amount,
+            currency: findPayment.currency
+        })
+        await axios.patch(findPayment.apiBaseUrl , {
             paymentId: findPayment.id,
             orderReference: findPayment.merchantReference,
             status: "APPROVED",

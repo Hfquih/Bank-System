@@ -50,6 +50,7 @@ export const register = async (req:Request , res:Response) => {
             balance: 0,
             availableBalance: 0,
             currency: "USD",
+            apiBaseUrl:"http://localhost:5000"
         }})
     }))
 

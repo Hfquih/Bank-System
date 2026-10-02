@@ -393,16 +393,20 @@ export const getTransaction = async (req : Request , res : Response) => {
     throw new NotFound("we dont found this account")
   }
   
-  const debitTransaction = await prisma.ledgerEntry.findMany({
+  const Transaction = await prisma.ledgerEntry.findMany({
     where : {
       accountId : account.id,
       transaction : {
         type : "transfer"
       }
+    },
+    include:{
+      transaction:true,
+      account:true
     }
   })
 
-  res.status(StatusCodes.OK).json({debitTransaction})
+  res.status(StatusCodes.OK).json({Transaction})
 }
 
 export const getRequest = async(req : Request , res : Response) => {
@@ -433,3 +437,176 @@ export const getRequest = async(req : Request , res : Response) => {
 
   res.status(StatusCodes.OK).json({debitRequest , creditRequest})
 }
+
+export const acceptRequest = async (req:Request , res:Response) => {
+    const requestId = Number(req.params.id)
+
+    const customerId = (req.user as { id: number }).id
+
+    const recipentAccount = await prisma.account.findFirst({
+        where : {customerId : customerId , status:"ACTIVE"}
+    })
+
+    if(!recipentAccount){
+        throw new NotFound('account not found')
+    }
+
+    const request = await prisma.moneyRequest.findFirst({
+        where :{
+            id:requestId , recipientAccountId : recipentAccount.id , status : "pending"
+        }
+    })
+
+    if(!request){
+        throw new NotFound("request not found")
+    }
+
+    if (recipentAccount.availableBalance.lt(request.amount)) {
+        throw new BadRequest("Insufficient balance")
+    }
+
+    const reference = `TRX-${crypto.randomUUID()}`;
+
+    await prisma.$transaction(async(tx)=>{
+        const transaction = await tx.transaction.create({
+            data :{
+                reference , type : "transfer" , amount : request.amount , currency : request.currency
+            }
+        })
+
+        await tx.ledgerEntry.create({
+            data : {
+                transactionId : transaction.id , accountId : request.recipientAccountId , type : "debit" , amount : request.amount , currency : request.currency
+            }
+        })
+
+        await tx.ledgerEntry.create({
+            data : {
+                transactionId : transaction.id , accountId : request.requesterAccountId , type : "credit" , amount : request.amount , currency : request.currency
+            }
+        })
+
+        await tx.transaction.update({
+            where : {id:transaction.id},
+            data : {status : "completed"}
+        })
+
+        await tx.moneyRequest.update({
+            where : {id : request.id},
+            data : {status : "accepted"}
+        })
+
+        await tx.account.update({
+            where:{id : request.recipientAccountId},
+            data : {balance:{decrement : request.amount} , availableBalance:{decrement : request.amount}}
+        })
+
+        await tx.account.update({
+            where : {id:request.requesterAccountId},
+            data : {balance : {increment : request.amount} , availableBalance : {increment : request.amount}}
+        })
+    })
+
+    res.status(StatusCodes.OK).json({msg : "Request Accepted"})
+}
+
+export const rejectRequest = async (req:Request , res:Response) => {
+    const customerId = (req.user as { id: number }).id
+
+    const requestId = Number(req.params.id)
+
+    const account = await prisma.account.findFirst({
+        where : {customerId : customerId , status:"ACTIVE"}
+    })
+
+    if(!account){
+        throw new NotFound('account not found')
+    }
+
+    const request = await prisma.moneyRequest.findFirst({
+        where : {
+            id:requestId,
+            recipientAccountId : account.id,
+            status:"pending"
+        }
+    })
+
+    if(!request){
+        throw new NotFound('request not found')
+    }
+
+    await prisma.moneyRequest.update({
+        where:{
+            id : request.id
+        },
+        data:{
+            status : "rejected"
+        }
+    })
+
+    res.status(200).json({msg : "request rejected"})
+}
+
+
+
+
+// card section //
+
+export const createCard = async (req:Request , res:Response) => {
+  const customerId = (req.user as { id: number }).id
+
+  const {type , brand} = req.body
+
+  const account = await prisma.account.findFirst({
+    where:{
+      customerId:customerId,
+      status:"ACTIVE"
+    }
+  })
+
+  if(!account){
+    throw new NotFound("account not found")
+  }
+
+  let start: string
+  let end: string
+
+  if (brand === "VISA") {
+    start = "400000"
+    end = "400999"
+  } else if (brand === "MASTERCARD") {
+    start = "510000"
+    end = "510999"
+  } else {
+    throw new BadRequest("invalid card brand")
+  }
+
+  const bin = crypto.randomInt(Number(start), Number(end) + 1).toString().padStart(start.length, "0")
+
+  const remainingDigits = Array.from({ length: 10 },() => crypto.randomInt(0, 10)).join("")
+
+  const cardNumber = `${bin}${remainingDigits}`
+
+  const expMonth = new Date().getMonth() + 1
+  const expYear = new Date().getFullYear() + 4
+
+  const cvv = crypto.randomInt(100, 1000).toString()
+
+  await prisma.card.create({
+    data:{
+      cardNumber:cardNumber,
+      brand:brand,
+      type:type,
+      expMonth:expMonth,
+      expYear:expYear,
+      cvv:cvv,
+      accountId:account.id
+    }
+  })
+
+  return res.status(StatusCodes.OK).json({msg:"Card created"})
+
+}
+
+
+export const financialNetwork = async (req : Request , res : Response) => {}
