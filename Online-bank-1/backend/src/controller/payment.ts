@@ -26,7 +26,7 @@ const prisma = new PrismaClient({
 
 export const createPaymentSession = async (req : Request , res : Response) =>{
 
-    const {amount , currency , orderReference , successUrl , cancelUrl , webhookUrl} = req.body 
+    const {amount , currency , userId , successUrl , cancelUrl , webhookUrl} = req.body 
 
     const apiKey = req.header("x-api-key");
     const apiSecret = req.header("x-api-secret");
@@ -74,7 +74,7 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
         },
 
         payment: {
-            merchantReference: orderReference,
+            userReference: userId,
             amount: amount,
             currency,
             successUrl,
@@ -85,7 +85,70 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
 
     const {data} = await axios.post('http://localhost:2000/api/v1/payment/payment-sessions', processorData)
 
-    console.log(data)
-
     res.status(StatusCodes.OK).json({checkoutUrl:data.checkoutUrl})
+}
+
+
+export const processor = async (req : Request , res : Response) =>{
+    const {amount , currency , merchantReference} = req.body 
+
+    const account = await prisma.account.findUnique({
+        where:{
+            accountNumber:merchantReference
+        }
+    })
+
+    if(!account){
+        throw new NotFound("account not found")
+    }
+
+    const reference = `TRX-${crypto.randomUUID()}`;
+
+    await prisma.$transaction(async (tx)=>{
+        const transaction = await tx.transaction.create({
+            data:{
+                reference:reference,
+                type:"payment",
+                amount:amount,
+                currency:currency,
+            }
+        })
+
+        await tx.ledgerEntry.create({
+            data:{
+                transactionId:transaction.id,
+                accountId:account.id,
+                type:"credit",
+                amount:transaction.amount,
+                currency:transaction.currency
+            }
+        })
+
+        await tx.account.update({
+            where:{
+                id:account.id
+            },
+            data:{
+                balance:{
+                    increment : amount
+                },
+                availableBalance: {
+                    increment : amount
+                }
+            }
+        })
+
+        await tx.transaction.update({
+            where:{
+                id:transaction.id 
+            },
+            data:{
+                status:"completed"
+            }
+        })
+    })
+
+
+    return res.sendStatus(StatusCodes.OK)
+
 }

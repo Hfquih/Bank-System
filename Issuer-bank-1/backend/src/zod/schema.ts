@@ -117,6 +117,23 @@ export const moneyOperationSchema = z.object({
 
 
 export const createCardSchema = z.object({
-  type: z.enum(["DEBIT", "CREDIT"]),
-  brand: z.enum(["VISA", "MASTERCARD"])
+  cardType: z.enum(["DEBIT", "CREDIT"]),
+  cardBrand: z.enum(["VISA", "MASTERCARD"])
+})
+
+
+export const financialNetworkSchema = z.object({
+  payment: z.object({
+    paymentId: z.number(),
+    amount: z.coerce.number().positive(),
+    currency: z.string().length(3),
+    merchantReference: z.string().min(1),
+  }),
+
+  card: z.object({
+    cardNumber: z.string().min(1),
+    expMonth: z.number().int().min(1).max(12),
+    expYear: z.number().int(),
+    cvv: z.string().length(3),
+  }),
 })

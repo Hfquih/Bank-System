@@ -7,7 +7,7 @@ export default function App(){
     <BrowserRouter>
       <Routes>
   
-        <Route path='/:sessionID' element={<Sessions/>}></Route>
+        <Route path='/:sessionId' element={<Sessions/>}></Route>
 
       </Routes> 
     </BrowserRouter>

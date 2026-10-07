@@ -159,12 +159,18 @@ export const connectIssuer = async (req : Request , res : Response) => {
     }
 
     
-    const {data} = await axios.post(`${binRange.issuer.baseUrl}/api/v1/authorized` , {payment , card})
+    try {
+        const { data } = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/authorized`,{ payment, card })
 
-    if(data.status==="success"){
-        return res.status(StatusCodes.OK).json({status:"success"})
-    }else{
-        return res.status(StatusCodes.OK).json({status:"failed"})
+        if (data.status === "success") {
+            return res.status(StatusCodes.OK).json({status: "success", msg: data.msg})
+        }
+
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+        }
+
+        throw error
     }
-    
 }

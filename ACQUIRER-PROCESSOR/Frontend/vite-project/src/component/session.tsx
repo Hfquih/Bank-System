@@ -67,15 +67,20 @@ export default function Sessions(){
         try{
             const {data} = await client.post(`/payment/payment-method/${sessionId}` , {...session})
 
-            setAlert({
-                msg:data.msg , success:true , error:false 
-            })
 
-            setTimeout(()=>{
+            
                 setAlert({
-                    msg:"" , success:false , error:false 
+                    msg:data.msg , success:true , error:false 
                 })
-            },3000)
+
+                setTimeout(()=>{
+                    setAlert({
+                        msg:"" , success:false , error:false 
+                    })
+                    window.location.href = data.redirectUrl
+                },3000)
+            
+            
         }catch(error){
             console.log(error)
             globalErr(error , setErrors , setAlert)
@@ -173,7 +178,7 @@ export default function Sessions(){
                                     inputMode="numeric"
                                     autoComplete="cc-exp-year"
                                     placeholder="YY"
-                                    pattern="[0-9]{2}"
+                                    pattern="[0-9]{4}"
                                     onChange={handleInputs}
                                 />
                                 {errors.expYear && <p className='text-error'>{errors.expYear}</p>}

@@ -305,7 +305,7 @@ export const getUserTransfer = async (req:Request , res:Response) => {
     }
 
     const transfer = await prisma.ledgerEntry.findMany({
-        where : {accountId:account.id , transaction:{type:"transfer"} , ...queryObject},
+        where : {accountId:account.id  , ...queryObject},
         include : {
             account : true ,
             transaction:true

@@ -396,9 +396,7 @@ export const getTransaction = async (req : Request , res : Response) => {
   const Transaction = await prisma.ledgerEntry.findMany({
     where : {
       accountId : account.id,
-      transaction : {
-        type : "transfer"
-      }
+      ...queryObject
     },
     include:{
       transaction:true,
@@ -555,7 +553,7 @@ export const rejectRequest = async (req:Request , res:Response) => {
 export const createCard = async (req:Request , res:Response) => {
   const customerId = (req.user as { id: number }).id
 
-  const {type , brand} = req.body
+  const {cardType , cardBrand} = req.body
 
   const account = await prisma.account.findFirst({
     where:{
@@ -571,10 +569,10 @@ export const createCard = async (req:Request , res:Response) => {
   let start: string
   let end: string
 
-  if (brand === "VISA") {
+  if (cardBrand === "VISA") {
     start = "400000"
     end = "400999"
-  } else if (brand === "MASTERCARD") {
+  } else if (cardBrand === "MASTERCARD") {
     start = "510000"
     end = "510999"
   } else {
@@ -595,8 +593,8 @@ export const createCard = async (req:Request , res:Response) => {
   await prisma.card.create({
     data:{
       cardNumber:cardNumber,
-      brand:brand,
-      type:type,
+      brand:cardBrand,
+      type:cardType,
       expMonth:expMonth,
       expYear:expYear,
       cvv:cvv,
@@ -609,4 +607,75 @@ export const createCard = async (req:Request , res:Response) => {
 }
 
 
-export const financialNetwork = async (req : Request , res : Response) => {}
+export const financialNetwork = async (req : Request , res : Response) => {
+  const {payment , card} = req.body
+
+  const findAccount = await prisma.card.findFirst({
+    where:{
+      cardNumber:card.cardNumber,
+      expMonth:card.expMonth,
+      cvv:card.cvv
+    },
+    include:{
+      account:true 
+    }
+  })
+
+  if(!findAccount){
+    throw new NotFound("incorrect card info")
+  }
+
+  if(findAccount.account.balance.lt(payment.amount)) {
+    throw new BadRequest("Insufficient balance")
+  }
+
+  const reference = `TRX-${crypto.randomUUID()}`;
+
+  await prisma.$transaction(async (tx)=>{
+    const transaction = await tx.transaction.create({
+      data:{
+        reference:reference,
+        type:"payment",
+        amount:payment.amount,
+        currency:payment.currency,
+        description:''
+      }
+    })
+
+    await tx.ledgerEntry.create({
+      data:{
+        transactionId:transaction.id,
+        accountId:findAccount.account.id,
+        type:'debit',
+        amount:transaction.amount,
+        currency:transaction.currency
+      }
+    })
+
+    await tx.account.update({
+      where:{
+        id:findAccount.account.id
+      },
+      data:{
+        balance:{
+          decrement:transaction.amount
+        },
+        availableBalance:{
+          decrement:transaction.amount
+        }
+      }
+    })
+
+    await tx.transaction.update({
+      where:{
+        id:transaction.id 
+      },
+      data:{
+        status:"completed"
+      }
+    })
+
+  })
+  
+  res.status(StatusCodes.OK).json({msg:"payment success" , status:"success"})
+}

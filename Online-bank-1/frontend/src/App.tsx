@@ -4,7 +4,7 @@ import Register from "./component/register.tsx";
 import Login from "./component/login.tsx";
 import Account from "./component/account.tsx";
 
-
+//http://localhost:5173/payment/success
 export default function App(){
   return(
     <BrowserRouter>

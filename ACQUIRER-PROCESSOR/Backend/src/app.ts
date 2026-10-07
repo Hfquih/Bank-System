@@ -4,9 +4,19 @@ import connectDb from './DB/connectDb'
 import payment from './router/processor'
 import notFound from './middleware/notFound'
 import errorHandler from './middleware/errorHandler'
+import cors from "cors"
 
 
 const app = express()
+
+const allowedOrigins = process.env.FRONTEND_URL?.split(",");
+
+app.use(cors({
+    origin:allowedOrigins,
+    credentials:true,
+    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "DELETE" , "PATCH"]
+}))
 
 const port = process.env.PORT || 2000
 

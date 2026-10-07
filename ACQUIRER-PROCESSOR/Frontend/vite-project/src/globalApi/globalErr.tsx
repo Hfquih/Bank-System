@@ -13,6 +13,7 @@ export default function globalErr(error , setErrors , setAlert){
         setErrors(checkErr)
     }else{
         setAlert({ msg: errors?.msg || errors?.[0].msg || "Something went wrong", field:true , error:true , success:false });
+        console.log(error)
     }
 
     setTimeout(()=>{

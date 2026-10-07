@@ -17,8 +17,9 @@ import cookieParser from "cookie-parser"
 app.use(cookieParser())
 
 app.use(helmet())
+const allowedOrigins = process.env.FRONTEND_URL?.split(",");
 app.use(cors({
-    origin:process.env.FRONTEND_URL,
+    origin:allowedOrigins,
     credentials:true,
     allowedHeaders: ["Content-Type", "Authorization"],
     methods: ["GET", "POST", "PUT", "DELETE" , "PATCH"]
