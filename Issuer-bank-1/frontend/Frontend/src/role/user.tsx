@@ -5,9 +5,11 @@ import Profil from "../user-functionality/profil";
 import Capabilities from "../user-functionality/capabilities";
 import Transaction from "../user-functionality/transaction";
 import Cards from "../user-functionality/cards";
+import MyCards from "../user-functionality/myCard";
 import Request from "../user-functionality/Request";
 import useAuth from "../globalAPI/useAuth";
 import { useNavigate } from "react-router-dom";
+
 
 export default function User(){
     const [show , setShow] = React.useState("overview")
@@ -31,6 +33,7 @@ export default function User(){
                     <a className={`issuer-nav-item ${show==="capabilities" ? "active" : "" }`} onClick={()=>setShow("capabilities")}><span>▦</span> My account</a>
                     <a className={`issuer-nav-item ${show==="transactions" ? "active" : "" }`} onClick={()=>setShow("transactions")}><span>↔</span> Transactions</a>
                     <a className={`issuer-nav-item ${show==="cards" ? "active" : "" }`} onClick={()=>setShow("cards")}><span>▭</span> Cards</a>
+                    <a className={`issuer-nav-item ${show==="my-card" ? "active" : "" }`} onClick={()=>setShow("my-card")}><span>▭</span>My cards</a>
                     <a className={`issuer-nav-item ${show==="requests" ? "active" : "" }`} onClick={()=>setShow("requests")}><span>◌</span> Money Movement</a>
                     <a className="issuer-nav-item" onClick={logoutfunc}><span><i className="fa-solid fa-right-from-bracket"></i></span> Logout</a>
                 </nav>
@@ -52,6 +55,8 @@ export default function User(){
             {show === "transactions" && <Transaction/>}
 
             {show === "cards" && <Cards/>}
+
+            {show === "my-card" && <MyCards/>}
 
             {show === "requests" && <Request/>}
   

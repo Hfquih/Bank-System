@@ -5,21 +5,21 @@ import globalErr from "../../globalAPI/globalErrors";
 
 type MovementForm = {
     amount: string;
+    cardId:string;
     description: string;
-    accountNumber: string;
 };
 
 interface TransactionErrors {
     amount?: string;
+    cardId?:string
     description?: string;
-    accountNumber?: string;
 }
 
 export default function Withdraw(props:any){
     const [form, setForm] = React.useState<MovementForm>({
         amount:"",
-        description:"",
-        accountNumber:""
+        cardId:"",
+        description:""
     });
 
     const [errors , setErrors] = React.useState<TransactionErrors>({})
@@ -43,7 +43,7 @@ export default function Withdraw(props:any){
     
         try{
     
-            const {data} = await client.post('/auth/create-transaction' , {...form})
+            const {data} = await client.post('/payment/withdrawal' , {...form})
     
             setAlert({
                 msg : data.msg , success : true , error : false
@@ -93,14 +93,20 @@ export default function Withdraw(props:any){
                 <label>
                     Amount
                     <input name="amount" type="number" min="0.01" step="0.01" value={form.amount} onChange={handleChange} required />
-                    {errors.amount && <small className="text-errro">{errors.amount}</small>}
+                    {errors.amount && <small className="text-error">{errors.amount}</small>}
+                </label>
+
+                <label>
+                    Cart ID
+                    <input name="cardId" type="text" value={form.cardId} onChange={handleChange} />
+                    {errors.cardId && <small className="text-error">{errors.cardId}</small>}
                 </label>
     
 
                 <label className="user-movement-description">
                     Description
                     <textarea name="description" rows={3} value={form.description} onChange={handleChange} placeholder="Add a note (optional)" />
-                    {errors.description && <small className="text-errro">{errors.description}</small>}
+                    {errors.description && <small className="text-error">{errors.description}</small>}
                 </label>
 
                 {alert.msg && <p className={alert.error ? 'text-error' : alert.success ? 'text-success' : ""}>{alert.msg}</p>}

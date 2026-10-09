@@ -174,3 +174,159 @@ export const connectIssuer = async (req : Request , res : Response) => {
         throw error
     }
 }
+
+export const verifyCard = async (req : Request , res : Response) => {
+    const {cardNumber , expMonth , expYear , cvv} = req.body
+
+    const bin = cardNumber.slice(0, 6)
+
+    const binRange = await prisma.bINRange.findFirst({
+        where: {
+            start: { lte: bin },
+            end: { gte: bin },
+            length: bin.length,
+            status: "ACTIVE"
+        },
+        include: {
+            issuer: true,
+        }
+    })
+
+    if(!binRange){
+        throw new NotFound("bin range not found")
+    }
+
+    const last4 = cardNumber.slice(-4);
+
+    const token = crypto.randomBytes(32).toString("hex");
+
+    try{
+        const {data} = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/verify-card` , {cardNumber , expMonth , expYear , cvv})
+
+        if(data.status === "success"){
+            const network = await prisma.networkToken.create({
+                data:{
+                    token:token,
+                    networkId:binRange.networkId,
+                    issuerId:binRange.issuerId,
+                    issuerCardId:data.cardId
+                }
+            })
+
+            return res.status(StatusCodes.OK).json({status:data.status , msg:data.msg , token:network.token , brand:data.brand , last4})
+        }
+
+    }catch (error) {
+        if (axios.isAxiosError(error)) {
+            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+        }
+
+        throw error
+    }
+}
+
+
+export const depositeFinancial = async (req:Request , res:Response) => {
+    const {amount , description , token} = req.body 
+
+    const getNetwork = await prisma.networkToken.findFirst({
+        where:{
+            token:token,
+            status:"ACTIVE"
+        },
+        include:{
+            issuer:true 
+        }
+    })
+
+    if(!getNetwork){
+        throw new NotFound("Invalid Card")
+    }
+
+    try{
+        const {data} = await axios.post(`${getNetwork.issuer.baseUrl}/api/v1/auth/deposite` , {amount , description , cardId:getNetwork.issuerCardId})
+
+        if(data.status==="success"){
+            return res.status(StatusCodes.OK).json({msg:data.msg , status:data.status})
+        }
+    }catch (error) {
+        if (axios.isAxiosError(error)) {
+            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+        }
+
+        throw error
+    }
+}
+
+
+export const withdrawalFinancial = async (req:Request , res:Response) => {
+    const {amount , description , token} = req.body 
+
+    const getNetwork = await prisma.networkToken.findFirst({
+        where:{
+            token:token,
+            status:"ACTIVE"
+        },
+        include:{
+            issuer:true 
+        }
+    })
+
+    if(!getNetwork){
+        throw new NotFound("Invalid Card")
+    }
+
+    try{
+        const {data} = await axios.post(`${getNetwork.issuer.baseUrl}/api/v1/auth/withdrawal` , {amount , description , cardId:getNetwork.issuerCardId})
+
+        if(data.status==="success"){
+            return res.status(StatusCodes.OK).json({msg:data.msg , status:data.status})
+        }
+    }catch (error) {
+        if (axios.isAxiosError(error)) {
+            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+        }
+
+        throw error
+    }
+}
+
+
+export const bankWithdrawal = async (req : Request , res : Response) => {
+    const {amount , cardNumber , description } = req.body 
+
+    const bin = cardNumber.slice(0, 6)
+
+    const binRange = await prisma.bINRange.findFirst({
+        where: {
+            start: { lte: bin },
+            end: { gte: bin },
+            length: bin.length,
+            status: "ACTIVE"
+        },
+        include: {
+            issuer: true,
+            brand: true
+        }
+    })
+
+    if(!binRange){
+        throw new NotFound("bin range not found")
+    }
+
+    
+    try {
+        const { data } = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/bank-withdrawal`,{ amount, cardNumber, description })
+
+        if (data.status === "success") {
+            return res.status(StatusCodes.OK).json({status: "success", msg: data.msg})
+        }
+
+    } catch (error) {
+        if (axios.isAxiosError(error)) {
+            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+        }
+
+        throw error
+    }
+}

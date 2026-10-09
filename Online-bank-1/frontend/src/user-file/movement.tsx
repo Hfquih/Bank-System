@@ -1,10 +1,11 @@
 import React from "react";
 import "../styles/movement.css";
 import Transfer from "./management-file/transfer";
-import Receive from "./management-file/receive";
 import Deposite from "./management-file/deposite";
 import Withdraw from "./management-file/withdraw";
 import Refund from "./management-file/refound";
+import Receive from "./management-file/receive";
+
 
 
 type MovementType = "transfer" | "receive" | "deposit" | "withdraw" | "refund";

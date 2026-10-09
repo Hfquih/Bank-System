@@ -5,6 +5,9 @@ import Management from "../user-file/management";
 import Transaction from "../user-file/transaction";
 import Movement from "../user-file/movement";
 import APIIntegration from "../user-file/APIIntegration";
+import AddCard from "../user-file/addCard";
+import MyCard from "../user-file/myCard";
+
 
 
 
@@ -42,6 +45,20 @@ const functionalities = [
         title: "API integration",
         description:
             "Integrate your banking data with third-party applications and services for a seamless experience.",
+        icon: "⧉",
+    },
+    {
+        number: "6",
+        title: "Add card",
+        description:
+            "add your card isuer.",
+        icon: "⧉",
+    },
+    {
+        number: "7",
+        title: "My card",
+        description:
+            "show all your card isuer.",
         icon: "⧉",
     },
 ];
@@ -122,6 +139,10 @@ export default function User() {
                         {show==='4' && <Movement/>}
 
                         {show==='5' && <APIIntegration/>}
+
+                        {show==='6' && <AddCard/>}
+
+                        {show==='7' && <MyCard/>}
                     </article>
                 </div>
 

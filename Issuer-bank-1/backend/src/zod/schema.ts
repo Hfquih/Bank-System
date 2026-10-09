@@ -137,3 +137,20 @@ export const financialNetworkSchema = z.object({
     cvv: z.string().length(3),
   }),
 })
+
+
+export const withdrawSchema = z.object({
+    amount: z.coerce
+        .number()
+        .positive("Amount must be greater than 0")
+        .finite("Amount must be a valid number"),
+
+    cardNumber: z
+        .string()
+        .regex(/^\d{16}$/, "Card number must contain exactly 16 digits"),
+
+    description: z
+        .string()
+        .trim()
+        .min(1, "Description is required"),
+});

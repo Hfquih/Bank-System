@@ -80,6 +80,7 @@ model Account {
   ledgerEntries    LedgerEntry[]
   refundRequests RefundRequest[]
   apiKeys          APIKey[]
+  linkedCards LinkedCard[]
 
   moneyRequestsSent     MoneyRequest[] @relation("MoneyRequestRequester")
   moneyRequestsReceived MoneyRequest[] @relation("MoneyRequestRecipient")
@@ -213,26 +214,33 @@ model MoneyRequest {
 }
 
 
-model RefundRequest {
-  id            Int                  @id @default(autoincrement())
-
-  transactionId Int                  @unique
-  accountId     Int
-
-  amount        Decimal              @db.Decimal(19, 4)
-  reason        String
-  status        RefundRequestStatus  @default(pending)
-
-  transaction   Transaction          @relation(fields: [transactionId],references: [id])
-
-  account       Account              @relation(fields: [accountId],references: [id])
-
-  createdAt     DateTime             @default(now())
-  updatedAt     DateTime             @updatedAt
+enum LinkedCardStatus {
+  ACTIVE
+  BLOCKED
+  EXPIRED
+  CANCELED
 }
 
-enum RefundRequestStatus {
-  pending
-  approved
-  rejected
+enum CardBrand {
+  VISA
+  MASTERCARD
+}
+
+model LinkedCard {
+  id          Int    @id @default(autoincrement())
+
+  token       String @unique
+  brand       CardBrand
+  last4       String
+  expMonth    Int
+  expYear     Int
+  status      LinkedCardStatus @default(ACTIVE)
+
+  accountId   Int
+  account     Account @relation(fields: [accountId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([accountId])
 }

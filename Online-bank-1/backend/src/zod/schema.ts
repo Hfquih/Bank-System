@@ -141,3 +141,42 @@ export const createPaymentSessionSchema = z.object({
     "x-api-secret": z.string().min(1, "API secret is required"),
   }),
 });
+
+
+export const addCardSchema = z.object({
+    firstName: z.string().trim().min(1, "First name is required"),
+    lastName: z.string().trim().min(1, "Last name is required"),
+
+    cardNumber: z
+        .string()
+        .regex(/^\d{16}$/, "Card number must contain 16 digits"),
+
+    expMonth: z.coerce
+        .number()
+        .int()
+        .min(1, "Invalid expiration month")
+        .max(12, "Invalid expiration month"),
+
+    expYear: z.coerce
+        .number()
+        .int()
+        .min(2026, "Invalid expiration year"),
+
+    cvv: z
+        .string()
+        .regex(/^\d{3}$/, "CVV must contain 3 digits"),
+});
+
+
+export const depositSchema = z.object({
+    amount: z.coerce
+        .number()
+        .positive("Amount must be greater than 0"),
+
+    cardId: z.coerce
+        .number()
+        .int()
+        .positive("Card ID must be a positive integer"),
+
+    description: z.string().trim().min(1, "Description is required"),
+});

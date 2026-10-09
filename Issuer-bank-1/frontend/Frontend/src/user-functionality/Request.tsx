@@ -15,6 +15,12 @@ type DepositForm = {
   description: string;
 };
 
+type withdrawForm = {
+  amount: string;
+  cardNumber:string;
+  description: string;
+};
+
 type RefundForm = {
   transactionId: string;
   reason: string;
@@ -39,8 +45,9 @@ export default function Request(){
         description:""
     })
 
-    const [withdraw , setWithdraw] = React.useState<DepositForm>({
+    const [withdraw , setWithdraw] = React.useState<withdrawForm>({
         amount : "",
+        cardNumber:"",
         description:""
     })
 
@@ -137,6 +144,30 @@ export default function Request(){
                 setAlert({
                     msg:"" , success:false , error:false , field:""
                 })
+            },3000)
+        }catch(error){
+            console.log(error)
+            globalErr(error , setErrors , setAlert)
+        }
+    }
+
+    
+    async function withdrawalIsuer(event: React.FormEvent<HTMLFormElement>){
+        event.preventDefault()
+
+        if(!checkInputs(withdraw , "withdraw"))return
+
+        try{
+            const {data} = await client.post("/auth/withdrawal-isuer" , {...withdraw})
+
+            setAlert({
+                msg:data.msg , success:true , error:false , field:"withdraw"
+            })
+
+            setTimeout(()=>{
+                setAlert({
+                    msg:"" , success:false , error:false , field:""
+                }) 
             },3000)
         }catch(error){
             console.log(error)
@@ -249,10 +280,14 @@ export default function Request(){
                     <div className="request-card-topline"><span className="request-card-icon request-card-icon-coral">−</span><span className="request-card-tag">TAKE OUT</span></div>
                     <h2>Withdraw money</h2>
                     <p>Move money out of your account.</p>
-                    <form className="request-form">
+                    <form className="request-form" onSubmit={withdrawalIsuer}>
                         <label>Amount
                             <input type="text" name="amount" placeholder="0.00" onChange={(event)=>handleInputs(event , setWithdraw)}/>
                             {errors.withdraw.amount && <p className="text-error">{errors.withdraw.amount}</p>}
+                        </label>
+                        <label>Card Number
+                            <input type="text" name="cardNumber" placeholder="0.00" onChange={(event)=>handleInputs(event , setWithdraw)}/>
+                            {errors.withdraw.cardNumber && <p className="text-error">{errors.withdraw.cardNumber}</p>}
                         </label>
                         <label>Description
                             <textarea name="description" placeholder="Add a note about this withdrawal" rows={3} onChange={(event)=>handleInputs(event , setWithdraw)}/>

@@ -22,6 +22,7 @@ model FinancialNetwork {
   brands    NetworkBrand[]
   issuers   Issuer[]
   binRanges BINRange[]
+  tokens    NetworkToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -72,6 +73,7 @@ model Issuer {
   network     FinancialNetwork @relation(fields: [networkId],references: [id])
 
   binRanges BINRange[]
+  tokens    NetworkToken[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -114,4 +116,34 @@ model BINRange {
   @@index([issuerId])
   @@index([start])
   @@index([end])
+}
+
+
+
+enum NetworkTokenStatus {
+  ACTIVE
+  SUSPENDED
+  INACTIVE
+}
+
+model NetworkToken {
+  id          Int    @id @default(autoincrement())
+
+  token       String @unique
+
+  networkId   Int
+  network     FinancialNetwork @relation(fields: [networkId], references: [id])
+
+  issuerId    Int
+  issuer      Issuer @relation(fields: [issuerId], references: [id])
+
+  issuerCardId Int
+
+  status      NetworkTokenStatus @default(ACTIVE)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([networkId])
+  @@index([issuerId])
 }
