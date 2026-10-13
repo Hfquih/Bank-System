@@ -1,14 +1,16 @@
 import express from "express"
 const router = express.Router()
-import {createPaymentSession , processor , addCard , depositeMoney , withdrawalMoney , myCard} from '../controller/payment'
+import {createPaymentSession , processor , failedProcessor , addCard , depositeMoney , withdrawalMoney , myCard} from '../controller/payment'
 import { validate } from "../zod/midZod"
-import {createPaymentSessionSchema , addCardSchema , depositSchema} from '../zod/schema'
+import {createPaymentSessionSchema , paymentProcessorSchema ,addCardSchema , depositSchema , paymentRecoverySchema} from '../zod/schema'
 import { requireAuth , authorization } from "../middleware/auth"
 
 
-router.post('/payment-session' , createPaymentSession)
+router.post('/payment-session', validate(createPaymentSessionSchema) , createPaymentSession)
 
-router.post('/processor' , processor)
+router.post('/processor' , validate(paymentProcessorSchema) , processor)
+
+router.post('/failedProcessor' , validate(paymentRecoverySchema) , failedProcessor)
 
 router.post('/add-card' , validate(addCardSchema) , requireAuth , authorization("admin" , "user") , addCard)
 

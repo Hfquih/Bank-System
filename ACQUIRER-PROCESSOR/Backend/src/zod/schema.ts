@@ -7,13 +7,13 @@ export const createPaymentSessionSchema = z.object({
         legalName: z.string().min(1),
         country: z.string().length(2),
         defaultCurrency: z.string().length(3).toUpperCase(),
+        paymentId: z.string().uuid()
     }),
 
     merchantAccount: z.object({
         accountCode: z.string().min(1),
         country: z.string().length(2),
         currency: z.string().length(3).toUpperCase(),
-        status: z.string().min(1),
         apiBaseUrl: z.string().url(),
     }),
 
@@ -47,4 +47,9 @@ export const paymentMethodSchema = z.object({
     cvv: z
       .string()
       .regex(/^\d{3,4}$/, "CVV must contain 3 or 4 digits"),
+});
+
+
+export const networkPaymentSchema = z.object({
+  paymentId: z.string().min(1, "Payment ID is required"),
 });

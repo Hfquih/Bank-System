@@ -74,6 +74,7 @@ model Issuer {
 
   binRanges BINRange[]
   tokens    NetworkToken[]
+  networkPayments NetworkPayment[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -146,4 +147,14 @@ model NetworkToken {
 
   @@index([networkId])
   @@index([issuerId])
+}
+
+
+model NetworkPayment {
+  id         String   @id @default(cuid())
+  paymentId  String   @unique
+  issuerId   Int
+  createdAt  DateTime @default(now())
+
+  issuer     Issuer   @relation(fields: [issuerId], references: [id])
 }

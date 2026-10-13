@@ -693,10 +693,13 @@ export const createCard = async (req:Request , res:Response) => {
 export const financialNetwork = async (req : Request , res : Response) => {
   const {payment , card} = req.body
 
+  console.log("its run")
+
   const findAccount = await prisma.card.findFirst({
     where:{
       cardNumber:card.cardNumber,
       expMonth:card.expMonth,
+      expYear:card.expYear,
       cvv:card.cvv
     },
     include:{
@@ -721,7 +724,8 @@ export const financialNetwork = async (req : Request , res : Response) => {
         type:"payment",
         amount:payment.amount,
         currency:payment.currency,
-        description:''
+        description:'',
+        paymentId:payment.paymentId
       }
     })
 
@@ -760,7 +764,7 @@ export const financialNetwork = async (req : Request , res : Response) => {
 
   })
   
-  res.status(StatusCodes.OK).json({msg:"payment success" , status:"success"})
+  res.status(StatusCodes.OK).json({msg:"payment success" , issuerStatus:"success"})
 }
 
 
@@ -1024,4 +1028,21 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
   })
   
   res.status(StatusCodes.OK).json({msg:"withdrawal success" , status:"success"})
+}
+
+
+export const checkIssuer = async (req : Request , res : Response) => {
+  const {paymentId} = req.body 
+
+  const transaction = await prisma.transaction.findUnique({
+    where:{
+      paymentId:paymentId
+    }
+  })
+
+  if(!transaction){
+    return res.status(StatusCodes.OK).json({issuerStatus:"incomplete"})
+  }
+
+  res.status(StatusCodes.OK).json({issuerStatus:transaction.status , msg:"payment success"})
 }

@@ -158,7 +158,8 @@ model Transaction {
 
   amount      Decimal           @db.Decimal(19, 4)
   currency    String            @db.VarChar(3)
-  description String
+  description String?
+  paymentId String?             @unique
 
   ledgerEntries LedgerEntry[]
   refundRequest RefundRequest?

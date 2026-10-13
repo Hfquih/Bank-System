@@ -124,10 +124,9 @@ export const createCardSchema = z.object({
 
 export const financialNetworkSchema = z.object({
   payment: z.object({
-    paymentId: z.number(),
     amount: z.coerce.number().positive(),
     currency: z.string().length(3),
-    merchantReference: z.string().min(1),
+    paymentId: z.string().uuid()
   }),
 
   card: z.object({
@@ -153,4 +152,45 @@ export const withdrawSchema = z.object({
         .string()
         .trim()
         .min(1, "Description is required"),
+});
+
+
+export const issuerVerifyCardSchema = z.object({
+  cardNumber: z
+    .string()
+    .regex(/^\d{13,19}$/, "Card number must contain between 13 and 19 digits"),
+
+  expMonth: z.coerce
+    .number()
+    .int("Expiration month must be an integer")
+    .min(1, "Expiration month must be between 1 and 12")
+    .max(12, "Expiration month must be between 1 and 12"),
+
+  expYear: z.coerce
+    .number()
+    .int("Expiration year must be an integer")
+    .min(new Date().getFullYear(), "Card has expired"),
+
+  cvv: z
+    .string()
+    .regex(/^\d{3,4}$/, "CVV must contain 3 or 4 digits"),
+});
+
+export const issuerDepositWithdrawSchema = z.object({
+  amount: z.coerce
+    .number()
+    .positive("Amount must be greater than 0")
+    .finite("Amount must be a finite number"),
+
+  description: z.string().trim().min(1, "Description is required"),
+
+  cardId: z.coerce
+    .number()
+    .int("Card ID must be an integer")
+    .positive("Card ID must be a positive integer"),
+})
+
+
+export const networkPaymentSchema = z.object({
+  paymentId: z.string().min(1, "Payment ID is required"),
 });

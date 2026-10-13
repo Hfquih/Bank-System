@@ -32,6 +32,19 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
     const apiKey = req.header("x-api-key");
     const apiSecret = req.header("x-api-secret");
 
+    const reference = `TRX-${crypto.randomUUID()}`;
+    const paymentId = crypto.randomUUID();
+
+    const transaction = await prisma.transaction.create({
+        data:{
+            reference,
+            type:"payment",
+            amount,
+            currency,
+            description:"",
+            paymentId:paymentId
+        }
+    })
 
 
     const findData = await prisma.aPIKey.findFirst({
@@ -60,6 +73,7 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
 
     const processorData = {
         merchant: {
+            paymentId:transaction.paymentId,
             name: findData.account.user.firstName,
             legalName: `${findData.account.user.firstName} ${findData.account.user.lastName}`,
             country: "US",
@@ -70,7 +84,6 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
             accountCode: findData.account.accountNumber,
             country: "US",
             currency: findData.account.currency,
-            status: findData.account.status,
             apiBaseUrl:findData.account.apiBaseUrl
         },
 
@@ -90,8 +103,11 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
 }
 
 
-export const processor = async (req : Request , res : Response) =>{
-    const {amount , currency , merchantReference} = req.body 
+export const processor = async (req: Request, res: Response) => {
+
+    const {issuerStatus , paymentId , merchantReference} = req.body
+
+    console.log("its run")
 
     const account = await prisma.account.findUnique({
         where:{
@@ -103,18 +119,30 @@ export const processor = async (req : Request , res : Response) =>{
         throw new NotFound("account not found")
     }
 
-    const reference = `TRX-${crypto.randomUUID()}`;
+    const transaction = await prisma.transaction.findUnique({
+        where:{
+            paymentId:paymentId
+        }
+    })
 
-    await prisma.$transaction(async (tx)=>{
-        const transaction = await tx.transaction.create({
+    if(!transaction){
+        throw new NotFound("transaction not found")
+    }
+
+    if(issuerStatus==="incomplete"){
+        await prisma.transaction.update({
+            where:{
+                id:transaction.id
+            },
             data:{
-                reference:reference,
-                type:"payment",
-                amount:amount,
-                currency:currency,
+                status:"failed"
             }
         })
 
+        return res.sendStatus(StatusCodes.OK)
+    }
+
+    await prisma.$transaction(async (tx)=>{
         await tx.ledgerEntry.create({
             data:{
                 transactionId:transaction.id,
@@ -127,14 +155,14 @@ export const processor = async (req : Request , res : Response) =>{
 
         await tx.account.update({
             where:{
-                id:account.id
+                id:account.id 
             },
             data:{
                 balance:{
-                    increment : amount
+                    increment:transaction.amount
                 },
-                availableBalance: {
-                    increment : amount
+                availableBalance:{
+                    increment:transaction.amount
                 }
             }
         })
@@ -149,9 +177,115 @@ export const processor = async (req : Request , res : Response) =>{
         })
     })
 
+    res.sendStatus(StatusCodes.OK)
+};
 
-    return res.sendStatus(StatusCodes.OK)
 
+export const failedProcessor = async (req:Request , res:Response) => {
+    const {paymentId , merchantReference} = req.body 
+
+    const account = await prisma.account.findUnique({
+        where:{
+            accountNumber:merchantReference
+        }
+    })
+
+    if(!account){
+        throw new NotFound("account not found")
+    }
+
+    const transaction = await prisma.transaction.findUnique({
+        where:{
+            paymentId:paymentId
+        }
+    })
+
+    if(!transaction){
+        throw new NotFound("transaction not found")
+    }
+
+    let issuerStatusCon
+
+    try{
+        const {data} = await axios.post("http://localhost:2000/api/v1/payment/check-issuerStatus" , {paymentId:transaction.paymentId})
+
+        if(data.issuerStatus){
+            issuerStatusCon = data.issuerStatus
+        }
+
+    }catch(error){
+        await prisma.transaction.update({
+            where:{
+                id:transaction.id 
+            },
+            data:{
+                status:"processing"
+            }
+        })
+    }
+
+    if(issuerStatusCon==="incomplete"){
+        await prisma.transaction.update({
+            where:{
+                id:transaction.id
+            },
+            data:{
+                status:"failed"
+            }
+        })
+
+        return res.sendStatus(StatusCodes.OK)
+    }
+
+    if(issuerStatusCon!=="complete"){
+        await prisma.transaction.update({
+            where:{
+                id:transaction.id
+            },
+            data:{
+                status:"processing"
+            }
+        })
+
+        return res.sendStatus(StatusCodes.OK);
+    }
+
+    await prisma.$transaction(async (tx)=>{
+        await tx.ledgerEntry.create({
+            data:{
+                transactionId:transaction.id,
+                accountId:account.id,
+                type:"credit",
+                amount:transaction.amount,
+                currency:transaction.currency
+            }
+        })
+
+        await tx.account.update({
+            where:{
+                id:account.id 
+            },
+            data:{
+                balance:{
+                    increment:transaction.amount
+                },
+                availableBalance:{
+                    increment:transaction.amount
+                }
+            }
+        })
+
+        await tx.transaction.update({
+            where:{
+                id:transaction.id 
+            },
+            data:{
+                status:"completed"
+            }
+        })
+    })
+
+    res.sendStatus(StatusCodes.OK)
 }
 
 
@@ -217,6 +351,10 @@ export const myCard = async (req:Request , res:Response)=>{
             accountId:account.id
         }
     })
+
+    if(!cards){
+        throw new NotFound("link card not found")
+    }
 
     res.status(StatusCodes.OK).json({cards})
 }
@@ -332,10 +470,14 @@ export const withdrawalMoney = async (req:Request , res:Response) =>{
         }
     })
 
+    if(!card){
+        throw new NotFound("link card not found")
+    }
+
     const reference = `TRX-${crypto.randomUUID()}`;
 
     try{
-        const {data} = await axios.post("http://localhost:6000/api/v1/financial/withdrawal-financial" , {amount , description , token:card?.token})
+        const {data} = await axios.post("http://localhost:6000/api/v1/financial/withdrawal-financial" , {amount , description , token:card.token})
 
         if(data.status==="success"){
             await prisma.$transaction(async (tx)=>{

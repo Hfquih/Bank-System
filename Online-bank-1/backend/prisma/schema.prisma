@@ -78,7 +78,6 @@ model Account {
   user             User          @relation(fields: [userId], references: [id])
 
   ledgerEntries    LedgerEntry[]
-  refundRequests RefundRequest[]
   apiKeys          APIKey[]
   linkedCards LinkedCard[]
 
@@ -144,9 +143,9 @@ model Transaction {
   amount      Decimal           @db.Decimal(19, 4)
   currency    String            @db.VarChar(3)
   description String?
+  paymentId String?             @unique
 
   ledgerEntries LedgerEntry[]
-  refundRequest RefundRequest?
 
   createdAt   DateTime          @default(now())
   updatedAt   DateTime          @updatedAt
@@ -180,6 +179,8 @@ model LedgerEntry {
   @@index([transactionId])
   @@index([accountId])
   @@index([createdAt])
+
+  @@unique([transactionId, accountId, type])
 }
 
 

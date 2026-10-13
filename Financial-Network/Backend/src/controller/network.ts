@@ -9,6 +9,7 @@ import {PrismaClient , Prisma} from '../generated/prisma/client.js'
 import { PrismaPg } from '@prisma/adapter-pg'
 import axios from "axios";
 import da from "zod/v4/locales/da.js";
+import { access } from "fs";
 
 
 
@@ -137,7 +138,7 @@ export const MinkiyIssuer = async(req : Request , res : Response) => {
 }
 
 export const connectIssuer = async (req : Request , res : Response) => {
-    const {payment , merchant , card } = req.body 
+    const {payment , card } = req.body 
 
     const bin = card.cardNumber.slice(0, 6)
 
@@ -146,7 +147,7 @@ export const connectIssuer = async (req : Request , res : Response) => {
             start: { lte: bin },
             end: { gte: bin },
             length: bin.length,
-            status: "ACTIVE"
+            status: "ACTIVE",
         },
         include: {
             issuer: true,
@@ -158,12 +159,21 @@ export const connectIssuer = async (req : Request , res : Response) => {
         throw new NotFound("bin range not found")
     }
 
+    await prisma.networkPayment.create({
+
+        data:{
+            paymentId:payment.paymentId,
+            issuerId:binRange.issuer.id
+        }
+    })
+
     
     try {
         const { data } = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/authorized`,{ payment, card })
 
-        if (data.status === "success") {
-            return res.status(StatusCodes.OK).json({status: "success", msg: data.msg})
+        if (data.issuerStatus === "success") {
+            console.log("its running")
+            return res.status(StatusCodes.OK).json({status: data.issuerStatus, msg: data.msg})
         }
 
     } catch (error) {
@@ -323,6 +333,38 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
         }
 
     } catch (error) {
+        if (axios.isAxiosError(error)) {
+            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+        }
+
+        throw error
+    }
+}
+
+
+export const financialCheck = async (req : Request , res : Response) => {
+    const {paymentId} = req.body 
+
+    const issuer = await prisma.networkPayment.findUnique({
+        where:{
+            paymentId:paymentId,
+        },
+        include:{
+            issuer:true 
+        }
+    })
+
+    if(!issuer){
+        throw new NotFound("issuer not found")
+    }
+
+    try{
+        const {data} = await axios.post(`${issuer.issuer.baseUrl}/api/v1/auth/check-issuer` , {paymentId})
+
+        if(data.issuerStatus){
+            return res.status(StatusCodes.OK).json({issuerStatus:data.issuerStatus , msg:data.msg})
+        }
+    }catch (error) {
         if (axios.isAxiosError(error)) {
             return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
         }

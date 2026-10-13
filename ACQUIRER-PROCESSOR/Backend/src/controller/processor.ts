@@ -44,6 +44,7 @@ export const createPaymentSession = async (req : Request , res : Response) => {
                 checkoutSessionId : checkoutSessionId, 
                 currency : payment.currency,
                 amount : payment.amount,
+                paymentId:merchant.paymentId,
                 successUrl:payment.successUrl,
                 cancelUrl:payment.cancelUrl,
                 webhookUrl:payment.webhookUrl,
@@ -81,6 +82,7 @@ export const createPaymentSession = async (req : Request , res : Response) => {
                 checkoutSessionId : checkoutSessionId,
                 currency : payment.currency,
                 amount : payment.amount,
+                paymentId:merchant.paymentId,
                 successUrl:payment.successUrl,
                 cancelUrl:payment.cancelUrl,
                 webhookUrl:payment.webhookUrl,
@@ -126,16 +128,9 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
 
     const networkData = {
         payment: {
-            paymentId: findPayment.id,
             amount: findPayment.amount,
             currency: findPayment.currency,
-            merchantReference: findPayment.merchantReference,
-        },
-
-        merchant: {
-            merchantAccountId: findPayment.merchantAccount.id,
-            accountCode: findPayment.merchantAccount.accountCode,
-            country: findPayment.merchantAccount.country,
+            paymentId:findPayment.paymentId
         },
 
         card: {
@@ -148,6 +143,8 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
 
     try {
         const { data } = await axios.post('http://localhost:6000/api/v1/financial/connect',networkData)
+
+        console.log("its running")
 
         // Financial Network succeeded
         await prisma.payment.update({
@@ -163,22 +160,17 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
         await axios.post(
             `${findPayment.apiBaseUrl}/api/v1/payment/processor`,
             {
-                paymentId: findPayment.id,
                 merchantReference: findPayment.merchantReference,
-                status: "APPROVED",
-                amount: findPayment.amount,
-                currency: findPayment.currency
+                paymentId: findPayment.paymentId,
+                issuerStatus:data.issuerStatus
             }
         )
 
         await axios.patch(
             findPayment.webhookUrl,
             {
-                paymentId: findPayment.id,
                 userReference: findPayment.userReference,
                 status: "APPROVED",
-                amount: findPayment.amount,
-                currency: findPayment.currency
             }
         )
 
@@ -189,20 +181,84 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
         // Financial Network / Issuer declined the payment
         if (axios.isAxiosError(error)) {
 
-            await prisma.payment.update({
-                where: {
-                    id: findPayment.id
-                },
-                data: {
-                    paymentMethodId: paymentMethod.id,
-                    status: "CANCELED"
-                }
-            })
+
+            try{
+                const {data} = await axios.post('http://localhost:6000/api/v1/financial/check' , {paymentId:findPayment.paymentId})
+
+                await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/processor`,
+                    {
+                        merchantReference: findPayment.merchantReference,
+                        paymentId: findPayment.paymentId,
+                        issuerStatus:data.issuerStatus
+                    }
+                )
+
+                await axios.patch(
+                    findPayment.webhookUrl,
+                    {
+                        userReference: findPayment.userReference,
+                        status: "APPROVED",
+                    }
+                )
+
+                return res.status(StatusCodes.OK).json({msg: data.msg,redirectUrl: findPayment.successUrl})
+
+            }catch (reconciliationError) {
+                await prisma.payment.update({
+                    where: {
+                        id: findPayment.id
+                    },
+                    data: {
+                        paymentMethodId: paymentMethod.id,
+                        status: "PENDING"
+                    }
+                })
+
+                await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/failedProcessor`,
+                    {
+                        merchantReference: findPayment.merchantReference,
+                        paymentId: findPayment.paymentId,
+                    }
+                )
+
+            }
 
             return res.status(error.response?.status ||StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
-        }
+
+        }   
 
         throw error
     }
     
+}
+
+
+export const failedProcessCheck = async (req:Request , res:Response) =>{
+    const {paymentId} = req.body 
+
+    try{
+        const {data} = await axios.post("http://localhost:6000/api/v1/financial/check" , {paymentId})
+
+        if(data.issuerStatus){
+
+            await prisma.payment.update({
+                where: {
+                    paymentId: paymentId
+                },
+                data: {
+                    status: "AUTHORIZED"
+                }
+            })
+
+            return res.status(StatusCodes.OK).json({issuerStatus:data.issuerStatus})
+
+        }
+
+    }catch (error) {
+        if (axios.isAxiosError(error)) {
+            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+        }
+
+        throw error
+    }
 }

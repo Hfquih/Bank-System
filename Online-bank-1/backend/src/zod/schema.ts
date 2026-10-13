@@ -123,23 +123,38 @@ export const createAPIKeySchema = z.object({
 
 
 export const createPaymentSessionSchema = z.object({
-  body: z.object({
-    amount: z.coerce.number().positive("Amount must be greater than 0"),
+  amount: z.coerce
+    .number()
+    .positive("Amount must be greater than 0")
+    .finite("Amount must be a finite number"),
 
-    currency: z
-      .string()
-      .length(3, "Currency must be a 3-letter code")
-      .toUpperCase(),
+  currency: z
+    .string()
+    .length(3, "Currency must be a 3-letter code")
+    .toUpperCase(),
 
-    orderReference: z
-      .string()
-      .min(1, "Order reference is required"),
-  }),
+  userId: z
+    .string()
+    .min(1, "User ID is required"),
 
-  headers: z.object({
-    "x-api-key": z.string().min(1, "API key is required"),
-    "x-api-secret": z.string().min(1, "API secret is required"),
-  }),
+  successUrl: z
+    .string()
+    .url("Success URL must be a valid URL"),
+
+  cancelUrl: z
+    .string()
+    .url("Cancel URL must be a valid URL"),
+
+  webhookUrl: z
+    .string()
+    .url("Webhook URL must be a valid URL"),
+});
+
+
+export const paymentProcessorSchema = z.object({
+  issuerStatus: z.string().min(1, "Issuer status is required"),
+  paymentId: z.string().min(1, "Payment ID is required"),
+  merchantReference: z.string().min(1, "Merchant reference is required"),
 });
 
 
@@ -179,4 +194,10 @@ export const depositSchema = z.object({
         .positive("Card ID must be a positive integer"),
 
     description: z.string().trim().min(1, "Description is required"),
+});
+
+
+export const paymentRecoverySchema = z.object({
+  merchantReference: z.string().min(1, "Merchant reference is required"),
+  paymentId: z.string().min(1, "Payment ID is required"),
 });

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "BINRange" ALTER COLUMN "paymentId" DROP NOT NULL;

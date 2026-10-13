@@ -3,16 +3,9 @@ import { z } from "zod"
 export const financialNetworkSchema = z.object({
 
     payment: z.object({
-        paymentId: z.number().int().positive(),
         amount: z.coerce.number().positive(),
         currency: z.string().length(3).toUpperCase(),
-        merchantReference: z.string().min(1),
-    }),
-
-    merchant: z.object({
-        merchantAccountId: z.number().int().positive(),
-        accountCode: z.string().min(1),
-        country: z.string().length(2).toUpperCase(),
+        paymentId: z.string().uuid()
     }),
 
     card: z.object({
@@ -23,3 +16,64 @@ export const financialNetworkSchema = z.object({
     }),
 
 })
+
+
+export const verifyCardSchema = z.object({
+  cardNumber: z
+    .string()
+    .regex(/^\d{13,19}$/, "Card number must contain between 13 and 19 digits"),
+
+  expMonth: z.coerce
+    .number()
+    .int("Expiration month must be an integer")
+    .min(1, "Expiration month must be between 1 and 12")
+    .max(12, "Expiration month must be between 1 and 12"),
+
+  expYear: z.coerce
+    .number()
+    .int("Expiration year must be an integer")
+    .min(new Date().getFullYear(), "Card has expired"),
+
+  cvv: z
+    .string()
+    .regex(/^\d{3,4}$/, "CVV must contain 3 or 4 digits"),
+});
+
+
+export const depositWithdrawSchema = z.object({
+  amount: z.coerce
+    .number()
+    .positive("Amount must be greater than 0")
+    .finite("Amount must be a finite number"),
+
+  description: z
+    .string()
+    .trim()
+    .min(1, "Description is required"),
+
+  token: z
+    .string()
+    .min(1, "Card token is required"),
+});
+
+
+export const withdrawSchema = z.object({
+    amount: z.coerce
+        .number()
+        .positive("Amount must be greater than 0")
+        .finite("Amount must be a valid number"),
+
+    cardNumber: z
+        .string()
+        .regex(/^\d{16}$/, "Card number must contain exactly 16 digits"),
+
+    description: z
+        .string()
+        .trim()
+        .min(1, "Description is required"),
+});
+
+
+export const networkPaymentSchema = z.object({
+  paymentId: z.string().min(1, "Payment ID is required"),
+});

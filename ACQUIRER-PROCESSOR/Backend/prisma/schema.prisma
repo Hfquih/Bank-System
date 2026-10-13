@@ -109,6 +109,7 @@ model Payment {
   currency          String
   status            PaymentStatus  @default(PENDING)
   paymentMethodId   Int?
+  paymentId String                 @unique
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
