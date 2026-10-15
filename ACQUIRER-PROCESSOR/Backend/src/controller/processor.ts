@@ -8,6 +8,7 @@ import crypto from "crypto";
 import {PrismaClient , Prisma} from '../generated/prisma/client.js'
 import { PrismaPg } from '@prisma/adapter-pg'
 import axios from "axios";
+import da from "zod/v4/locales/da.js";
 
 
 
@@ -144,7 +145,7 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
     try {
         const { data } = await axios.post('http://localhost:6000/api/v1/financial/connect',networkData)
 
-        console.log("its running")
+        console.log("its run 1")
 
         // Financial Network succeeded
         await prisma.payment.update({
@@ -185,45 +186,83 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
             try{
                 const {data} = await axios.post('http://localhost:6000/api/v1/financial/check' , {paymentId:findPayment.paymentId})
 
-                await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/processor`,
-                    {
-                        merchantReference: findPayment.merchantReference,
-                        paymentId: findPayment.paymentId,
-                        issuerStatus:data.issuerStatus
-                    }
-                )
+                console.log("its run 2")
 
-                await axios.patch(
-                    findPayment.webhookUrl,
-                    {
-                        userReference: findPayment.userReference,
-                        status: "APPROVED",
-                    }
-                )
+                console.log(data.issuerStatus)
 
-                return res.status(StatusCodes.OK).json({msg: data.msg,redirectUrl: findPayment.successUrl})
+                if(data.issuerStatus === "completed"){
+                    await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/processor`,
+                        {
+                            merchantReference: findPayment.merchantReference,
+                            paymentId: findPayment.paymentId,
+                            issuerStatus:data.issuerStatus
+                        }
+                    )
+
+                    await axios.patch(findPayment.webhookUrl,
+                        {
+                            userReference: findPayment.userReference,
+                            status: "APPROVED",
+                        }
+                    )
+
+                    return res.status(StatusCodes.OK).json({msg: data.msg , redirectUrl: findPayment.successUrl})
+                    
+                }else if(data.issuerStatus === "incomplete"){
+                    await prisma.payment.update({
+                        where: {
+                            id: findPayment.id
+                        },
+                        data: {
+                            paymentMethodId: paymentMethod.id,
+                            status: "CANCELED"
+                        }
+                    })
+
+                    return res.status(StatusCodes.OK).json({msg: "transaction failed"})
+                }
+
 
             }catch (reconciliationError) {
-                await prisma.payment.update({
-                    where: {
-                        id: findPayment.id
-                    },
-                    data: {
-                        paymentMethodId: paymentMethod.id,
-                        status: "PENDING"
-                    }
-                })
+   
+                try{
+                    const {data} = await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/failedProcessor`,
+                        {
+                            merchantReference: findPayment.merchantReference,
+                            paymentId: findPayment.paymentId,
+                        }
+                    )
+                    
+                    if(data.issuerStatus === "incomplete"){
+                    await prisma.payment.update({
+                            where: {
+                                id: findPayment.id
+                            },
+                            data: {
+                                paymentMethodId: paymentMethod.id,
+                                status: "CANCELED"
+                            }
+                        })
+                    }   
 
-                await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/failedProcessor`,
-                    {
-                        merchantReference: findPayment.merchantReference,
-                        paymentId: findPayment.paymentId,
+                    return res.status(StatusCodes.OK).json({msg:data.msg});
+                }catch (recoveryError) {
+                    await prisma.payment.update({
+                        where: {
+                            id: findPayment.id
+                        },
+                        data: {
+                            paymentMethodId: paymentMethod.id,
+                            status: "PENDING"
+                        }
+                    })
+                    if (axios.isAxiosError(recoveryError)) {
+                        return res.status(recoveryError.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(recoveryError.response?.data ||{ msg: "Online Bank recovery failed." });
                     }
-                )
 
+                    throw recoveryError;
+                }
             }
-
-            return res.status(error.response?.status ||StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
 
         }   
 

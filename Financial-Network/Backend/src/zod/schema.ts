@@ -54,6 +54,14 @@ export const depositWithdrawSchema = z.object({
   token: z
     .string()
     .min(1, "Card token is required"),
+
+  merchantReference: z
+    .string()
+    .min(1, "Merchant reference (account number) is required"),
+
+  paymentId: z
+    .string()
+    .min(1, "Payment ID is required"),
 });
 
 

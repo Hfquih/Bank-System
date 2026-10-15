@@ -172,11 +172,11 @@ export const connectIssuer = async (req : Request , res : Response) => {
         const { data } = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/authorized`,{ payment, card })
 
         if (data.issuerStatus === "success") {
-            console.log("its running")
-            return res.status(StatusCodes.OK).json({status: data.issuerStatus, msg: data.msg})
+            return res.status(StatusCodes.OK).json({issuerStatus: data.issuerStatus, msg: data.msg})
         }
 
     } catch (error) {
+        console.log("its running")
         if (axios.isAxiosError(error)) {
             return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
         }
@@ -186,7 +186,7 @@ export const connectIssuer = async (req : Request , res : Response) => {
 }
 
 export const verifyCard = async (req : Request , res : Response) => {
-    const {cardNumber , expMonth , expYear , cvv} = req.body
+    const {cardNumber , expMonth , expYear , cvv , baseUrl} = req.body
 
     const bin = cardNumber.slice(0, 6)
 
@@ -219,7 +219,8 @@ export const verifyCard = async (req : Request , res : Response) => {
                     token:token,
                     networkId:binRange.networkId,
                     issuerId:binRange.issuerId,
-                    issuerCardId:data.cardId
+                    issuerCardId:data.cardId,
+                    baseUrl:baseUrl
                 }
             })
 
@@ -237,7 +238,7 @@ export const verifyCard = async (req : Request , res : Response) => {
 
 
 export const depositeFinancial = async (req:Request , res:Response) => {
-    const {amount , description , token} = req.body 
+    const {amount , description , token , paymentId , merchantReferance} = req.body 
 
     const getNetwork = await prisma.networkToken.findFirst({
         where:{
@@ -256,21 +257,46 @@ export const depositeFinancial = async (req:Request , res:Response) => {
     try{
         const {data} = await axios.post(`${getNetwork.issuer.baseUrl}/api/v1/auth/deposite` , {amount , description , cardId:getNetwork.issuerCardId})
 
-        if(data.status==="success"){
-            return res.status(StatusCodes.OK).json({msg:data.msg , status:data.status})
+        if(data.issuerStatus==="success"){
+            return res.status(StatusCodes.OK).json({msg:data.msg , issuerStatus:data.status})
         }
     }catch (error) {
-        if (axios.isAxiosError(error)) {
-            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
-        }
 
-        throw error
+        // Financial Network / Issuer declined the payment
+        if (axios.isAxiosError(error)) {
+
+
+            try{
+                const {data} = await axios.post(`${getNetwork.issuer.baseUrl}/api/v1/auth/check-issuer` , {paymentId}) 
+
+                return res.status(StatusCodes.OK).json({msg: data.msg , issuerStatus:data.issuerStatus})
+
+            }catch (reconciliationError) {
+                
+                try {
+                    const { data } = await axios.post(
+                        `${getNetwork.baseUrl}/payment/failed-Deposite`,
+                        { paymentId, merchantReferance }
+                    );
+
+                    return res.status(StatusCodes.OK).json({msg:data.msg});
+
+                }catch (recoveryError) {
+                    if (axios.isAxiosError(recoveryError)) {
+                        return res.status(recoveryError.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(recoveryError.response?.data ||{ msg: "Online Bank recovery failed." });
+                    }
+
+                    throw recoveryError;
+                }
+
+            }
+        }   
     }
 }
 
 
 export const withdrawalFinancial = async (req:Request , res:Response) => {
-    const {amount , description , token} = req.body 
+    const {amount , description , token , merchantReferance , paymentId} = req.body 
 
     const getNetwork = await prisma.networkToken.findFirst({
         where:{
@@ -289,15 +315,40 @@ export const withdrawalFinancial = async (req:Request , res:Response) => {
     try{
         const {data} = await axios.post(`${getNetwork.issuer.baseUrl}/api/v1/auth/withdrawal` , {amount , description , cardId:getNetwork.issuerCardId})
 
-        if(data.status==="success"){
-            return res.status(StatusCodes.OK).json({msg:data.msg , status:data.status})
+        if(data.issuerStatus==="success"){
+            return res.status(StatusCodes.OK).json({msg:data.msg , issuerStatus:data.status})
         }
     }catch (error) {
-        if (axios.isAxiosError(error)) {
-            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
-        }
 
-        throw error
+        // Financial Network / Issuer declined the payment
+        if (axios.isAxiosError(error)) {
+
+
+            try{
+                const {data} = await axios.post(`${getNetwork.issuer.baseUrl}/api/v1/auth/check-issuer` , {paymentId}) 
+
+                return res.status(StatusCodes.OK).json({msg: data.msg , issuerStatus:data.issuerStatus})
+
+            }catch (reconciliationError) {
+                
+                try {
+                    const { data } = await axios.post(
+                        `${getNetwork.baseUrl}/payment/failed-Deposite`,
+                        { paymentId, merchantReferance }
+                    );
+
+                    return res.status(StatusCodes.OK).json({msg:data.msg});
+
+                }catch (recoveryError) {
+                    if (axios.isAxiosError(recoveryError)) {
+                        return res.status(recoveryError.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(recoveryError.response?.data ||{ msg: "Online Bank recovery failed." });
+                    }
+
+                    throw recoveryError;
+                }
+
+            }
+        }   
     }
 }
 
@@ -329,7 +380,7 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
         const { data } = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/bank-withdrawal`,{ amount, cardNumber, description })
 
         if (data.status === "success") {
-            return res.status(StatusCodes.OK).json({status: "success", msg: data.msg})
+            return res.status(StatusCodes.OK).json({issuerStatus: data.issuerStatus , msg: data.msg})
         }
 
     } catch (error) {

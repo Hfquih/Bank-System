@@ -693,8 +693,6 @@ export const createCard = async (req:Request , res:Response) => {
 export const financialNetwork = async (req : Request , res : Response) => {
   const {payment , card} = req.body
 
-  console.log("its run")
-
   const findAccount = await prisma.card.findFirst({
     where:{
       cardNumber:card.cardNumber,
@@ -887,7 +885,7 @@ export const onlineBankDeposite = async (req:Request , res:Response) => {
 
   })
   
-  res.status(StatusCodes.OK).json({msg:"payment success" , status:"success"})
+  res.status(StatusCodes.OK).json({msg:"payment success" , issuerStatus:"success"})
 
 
 }
@@ -958,7 +956,7 @@ export const onlineBankwithdrawal = async (req:Request , res:Response) => {
 
   })
   
-  res.status(StatusCodes.OK).json({msg:"payment success" , status:"success"})
+  res.status(StatusCodes.OK).json({msg:"payment success" , issuerStatus:"success"})
 
 
 }

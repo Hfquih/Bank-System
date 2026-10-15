@@ -131,6 +131,7 @@ model NetworkToken {
   id          Int    @id @default(autoincrement())
 
   token       String @unique
+  baseUrl     String
 
   networkId   Int
   network     FinancialNetwork @relation(fields: [networkId], references: [id])
