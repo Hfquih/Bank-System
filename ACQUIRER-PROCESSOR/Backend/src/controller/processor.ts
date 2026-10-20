@@ -145,7 +145,7 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
     try {
         const { data } = await axios.post('http://localhost:6000/api/v1/financial/connect',networkData)
 
-        console.log("its run 1")
+        console.log("run now")
 
         // Financial Network succeeded
         await prisma.payment.update({
@@ -175,7 +175,7 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
             }
         )
 
-        return res.status(StatusCodes.OK).json({msg: data.msg,redirectUrl: findPayment.successUrl})
+        return res.status(StatusCodes.OK).json({msg: data.msg,redirectUrl: findPayment.successUrl , status:data.issuerStatus})
 
     } catch (error) {
 
@@ -186,11 +186,9 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
             try{
                 const {data} = await axios.post('http://localhost:6000/api/v1/financial/check' , {paymentId:findPayment.paymentId})
 
-                console.log("its run 2")
-
-                console.log(data.issuerStatus)
 
                 if(data.issuerStatus === "completed"){
+        
                     await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/processor`,
                         {
                             merchantReference: findPayment.merchantReference,
@@ -206,9 +204,10 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                         }
                     )
 
-                    return res.status(StatusCodes.OK).json({msg: data.msg , redirectUrl: findPayment.successUrl})
+                    return res.status(StatusCodes.OK).json({msg: data.msg , redirectUrl: findPayment.successUrl , status:data.issuerStatus})
                     
                 }else if(data.issuerStatus === "incomplete"){
+
                     await prisma.payment.update({
                         where: {
                             id: findPayment.id
@@ -219,7 +218,7 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                         }
                     })
 
-                    return res.status(StatusCodes.OK).json({msg: "transaction failed"})
+                    return res.status(StatusCodes.OK).json({msg: "transaction failed" , status:data.issuerStatus})
                 }
 
 
@@ -232,9 +231,20 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                             paymentId: findPayment.paymentId,
                         }
                     )
+
+                    if(data.issuerStatus === "completed"){
+                        await axios.patch(
+                            findPayment.webhookUrl,
+                        {
+                            userReference: findPayment.userReference,
+                            status: "APPROVED",
+                        }
+                        )
+                    }
                     
                     if(data.issuerStatus === "incomplete"){
-                    await prisma.payment.update({
+
+                        await prisma.payment.update({
                             where: {
                                 id: findPayment.id
                             },
@@ -245,8 +255,9 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                         })
                     }   
 
-                    return res.status(StatusCodes.OK).json({msg:data.msg});
+                    return res.status(StatusCodes.OK).json({msg:data.msg , status:data.issuerStatus});
                 }catch (recoveryError) {
+
                     await prisma.payment.update({
                         where: {
                             id: findPayment.id
@@ -256,11 +267,9 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                             status: "PENDING"
                         }
                     })
-                    if (axios.isAxiosError(recoveryError)) {
-                        return res.status(recoveryError.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(recoveryError.response?.data ||{ msg: "Online Bank recovery failed." });
-                    }
-
-                    throw recoveryError;
+                    
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: "Online Bank recovery failed." });
+                    
                 }
             }
 

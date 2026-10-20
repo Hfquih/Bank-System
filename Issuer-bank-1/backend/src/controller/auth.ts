@@ -817,7 +817,7 @@ export const verifyCard = async (req:Request , res:Response)=>{
 
 
 export const onlineBankDeposite = async (req:Request , res:Response) => {
-  const {amount , description , cardId} = req.body 
+  const {amount , description , cardId , paymentId} = req.body 
 
   const account = await prisma.card.findFirst({
     where:{
@@ -846,7 +846,8 @@ export const onlineBankDeposite = async (req:Request , res:Response) => {
         type:"withdrawal",
         amount:amount,
         currency:"USD",
-        description:description
+        description:description,
+        paymentId:paymentId
       }
     })
 
@@ -892,7 +893,7 @@ export const onlineBankDeposite = async (req:Request , res:Response) => {
 
 
 export const onlineBankwithdrawal = async (req:Request , res:Response) => {
-  const {amount , description , cardId} = req.body 
+  const {amount , description , cardId , paymentId} = req.body 
 
   const account = await prisma.card.findFirst({
     where:{
@@ -917,7 +918,8 @@ export const onlineBankwithdrawal = async (req:Request , res:Response) => {
         type:"deposit",
         amount:amount,
         currency:"USD",
-        description:description
+        description:description,
+        paymentId:paymentId
       }
     })
 
@@ -956,13 +958,13 @@ export const onlineBankwithdrawal = async (req:Request , res:Response) => {
 
   })
   
-  res.status(StatusCodes.OK).json({msg:"payment success" , issuerStatus:"success"})
+  res.status(StatusCodes.OK).json({msg:"withdrawal success" , issuerStatus:"success"})
 
 
 }
 
 export const bankWithdrawal = async (req : Request , res : Response) => {
-  const {amount , cardNumber , description} = req.body
+  const {amount , cardNumber , description } = req.body
 
   const findAccount = await prisma.card.findFirst({
     where:{
@@ -986,7 +988,7 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
         type:"payment",
         amount:amount,
         currency:"USD",
-        description:description
+        description:description,
       }
     })
 
@@ -1039,7 +1041,7 @@ export const checkIssuer = async (req : Request , res : Response) => {
   })
 
   if(!transaction){
-    return res.status(StatusCodes.OK).json({issuerStatus:"incomplete"})
+    return res.status(StatusCodes.OK).json({issuerStatus:"incomplete" , msg:"transaction failed"})
   }
 
   res.status(StatusCodes.OK).json({issuerStatus:transaction.status , msg:"payment success"})

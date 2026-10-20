@@ -73,13 +73,21 @@ export default function Sessions(){
                     msg:data.msg , success:true , error:false 
                 })
 
+                if(data.status!=="completed"){
+                    setTimeout(()=>{
+                        setAlert({
+                            msg:"" , success:false , error:false 
+                        })
+                    },3000)
+                    return
+                }
+
                 setTimeout(()=>{
                     setAlert({
                         msg:"" , success:false , error:false 
                     })
                     window.location.href = data.redirectUrl
-                },3000)
-            
+                },3000)        
             
         }catch(error){
             console.log(error)

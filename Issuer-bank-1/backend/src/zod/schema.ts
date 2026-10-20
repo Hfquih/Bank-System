@@ -188,6 +188,8 @@ export const issuerDepositWithdrawSchema = z.object({
     .number()
     .int("Card ID must be an integer")
     .positive("Card ID must be a positive integer"),
+
+    paymentId: z.string().min(1, "Payment ID is required"),
 })
 
 

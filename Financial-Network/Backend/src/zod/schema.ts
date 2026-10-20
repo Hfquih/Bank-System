@@ -37,6 +37,8 @@ export const verifyCardSchema = z.object({
   cvv: z
     .string()
     .regex(/^\d{3,4}$/, "CVV must contain 3 or 4 digits"),
+
+  baseUrl: z.string().url("Invalid base URL"),
 });
 
 

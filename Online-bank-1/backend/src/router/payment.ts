@@ -1,6 +1,6 @@
 import express from "express"
 const router = express.Router()
-import {createPaymentSession , processor , failedProcessor , addCard , depositeMoney , withdrawalMoney , myCard} from '../controller/payment'
+import {createPaymentSession , processor , failedProcessor , addCard , depositeMoney , withdrawalMoney , myCard, withdrawalDepositeFailed} from '../controller/payment'
 import { validate } from "../zod/midZod"
 import {createPaymentSessionSchema , paymentProcessorSchema ,addCardSchema , depositSchema , paymentRecoverySchema} from '../zod/schema'
 import { requireAuth , authorization } from "../middleware/auth"
@@ -15,6 +15,8 @@ router.post('/failedProcessor' , validate(paymentRecoverySchema) , failedProcess
 router.post('/add-card' , validate(addCardSchema) , requireAuth , authorization("admin" , "user") , addCard)
 
 router.post('/deposite' , validate(depositSchema) , requireAuth , authorization("admin" , "user") , depositeMoney)
+
+router.post('/failed-withdrawal-deposite' , validate(paymentRecoverySchema) , withdrawalDepositeFailed)
 
 router.post('/withdrawal' , validate(depositSchema) , requireAuth , authorization("admin" , "user") , withdrawalMoney)
 
