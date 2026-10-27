@@ -138,7 +138,7 @@ export const financialNetworkSchema = z.object({
 })
 
 
-export const withdrawSchema = z.object({
+export const withdrawSchemaFirst = z.object({
     amount: z.coerce
         .number()
         .positive("Amount must be greater than 0")
@@ -152,6 +152,25 @@ export const withdrawSchema = z.object({
         .string()
         .trim()
         .min(1, "Description is required"),
+});
+
+
+export const withdrawSchemaSecond = z.object({
+    amount: z.coerce
+        .number()
+        .positive("Amount must be greater than 0")
+        .finite("Amount must be a valid number"),
+
+    targetCardNumber: z
+        .string()
+        .regex(/^\d{16}$/, "Card number must contain exactly 16 digits"),
+
+    description: z
+        .string()
+        .trim()
+        .min(1, "Description is required"),
+
+    paymentId: z.string().min(1, "Payment ID is required"),
 });
 
 
@@ -195,4 +214,9 @@ export const issuerDepositWithdrawSchema = z.object({
 
 export const networkPaymentSchema = z.object({
   paymentId: z.string().min(1, "Payment ID is required"),
+});
+
+export const withdrawalSchemaFailed = z.object({
+  paymentId: z.string().uuid(), 
+  sourceCardNumber: z.string().min(1, "Source card number is required"), 
 });

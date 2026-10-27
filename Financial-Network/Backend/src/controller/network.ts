@@ -137,6 +137,88 @@ export const MinkiyIssuer = async(req : Request , res : Response) => {
     res.status(StatusCodes.CREATED).json({msg: "minkiy issuer created"})
 }
 
+
+export const wafaCashIssuer = async(req : Request , res : Response) => {
+
+    const financialNetwork = await prisma.financialNetwork.findUnique({
+        where : {
+            code:"GPN"
+        }
+    })
+
+    if(!financialNetwork){
+        throw new NotFound("financial network dont found")
+    }
+
+    const brandNetworkVisa = await prisma.networkBrand.findFirst({
+        where:{
+            networkId:financialNetwork.id,
+            code:"VISA"
+        }
+    })
+
+    if(!brandNetworkVisa){
+        throw new NotFound("financial Visa brand not found")
+    }
+
+    const brandNetworkMc = await prisma.networkBrand.findFirst({
+        where:{
+            networkId:financialNetwork.id,
+            code:"MC"
+        }
+    })
+
+    if(!brandNetworkMc){
+        throw new NotFound("financial MC brand not found")
+    }
+
+    await prisma.$transaction(async (tx)=>{
+        const wafacash = await tx.issuer.create({
+            data:{
+                name : "WAFACASH Bank",
+                code : "WAFACASH",
+                country: "USA",
+                baseUrl:"http://localhost:9000",
+                networkId:financialNetwork.id
+            }
+        })
+
+        const visaStart = "401000";
+        const visaEnd = "401999";
+
+        const mastercardStart = "511000";
+        const mastercardEnd = "511999";
+
+        await tx.bINRange.create({
+            data:{
+                start:visaStart,
+                end:visaEnd,
+                length:6,
+                networkId:financialNetwork.id,
+                brandId:brandNetworkVisa.id,
+                issuerId:wafacash.id,
+                country:wafacash.country
+            }
+        })
+
+        await tx.bINRange.create({
+            data:{
+                start:mastercardStart,
+                end:mastercardEnd,
+                length:6,
+                networkId:financialNetwork.id,
+                brandId:brandNetworkMc.id,
+                issuerId:wafacash.id,
+                country:wafacash.country
+            }
+        })
+    })
+    
+
+    res.status(StatusCodes.CREATED).json({msg: "Wafa cash issuer created"})
+}
+
+
 export const connectIssuer = async (req : Request , res : Response) => {
     const {payment , card } = req.body 
 
@@ -160,7 +242,6 @@ export const connectIssuer = async (req : Request , res : Response) => {
     }
 
     await prisma.networkPayment.create({
-
         data:{
             paymentId:payment.paymentId,
             issuerId:binRange.issuer.id
@@ -172,6 +253,7 @@ export const connectIssuer = async (req : Request , res : Response) => {
         const { data } = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/authorized`,{ payment, card })
 
         if (data.issuerStatus === "success") {
+            console.log("run now 1")
             return res.status(StatusCodes.OK).json({issuerStatus: data.issuerStatus, msg: data.msg})
         }
 
@@ -368,15 +450,15 @@ export const withdrawalFinancial = async (req:Request , res:Response) => {
 
 
 export const bankWithdrawal = async (req : Request , res : Response) => {
-    const {amount , cardNumber , description } = req.body 
+    const {amount , sourceCardNumber, targetCardNumber , description , paymentId } = req.body 
 
-    const bin = cardNumber.slice(0, 6)
+    const sourceBin = sourceCardNumber.slice(0, 6)
 
-    const binRange = await prisma.bINRange.findFirst({
+    const sourceBinRange = await prisma.bINRange.findFirst({
         where: {
-            start: { lte: bin },
-            end: { gte: bin },
-            length: bin.length,
+            start: { lte: sourceBin },
+            end: { gte: sourceBin },
+            length: sourceBin.length,
             status: "ACTIVE"
         },
         include: {
@@ -385,23 +467,72 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
         }
     })
 
-    if(!binRange){
+    const targetBin = targetCardNumber.slice(0, 6)
+
+    const targetBinRange = await prisma.bINRange.findFirst({
+        where: {
+            start: { lte: targetBin },
+            end: { gte: targetBin },
+            length: targetBin.length,
+            status: "ACTIVE"
+        },
+        include: {
+            issuer: true,
+            brand: true
+        }
+    })
+
+    if(!sourceBinRange || !targetBinRange){
         throw new NotFound("bin range not found")
     }
 
+    await prisma.networkPayment.create({
+        data:{
+            paymentId:paymentId,
+            issuerId:targetBinRange.issuer.id
+        }
+    })
+
     
     try {
-        const { data } = await axios.post(`${binRange.issuer.baseUrl}/api/v1/auth/bank-withdrawal`,{ amount, cardNumber, description })
+        const { data } = await axios.post(`${targetBinRange.issuer.baseUrl}/api/v1/auth/bank-withdrawal`,{ amount, targetCardNumber, description , paymentId})
 
-        if (data.status === "success") {
+        if (data.issuerStatus === "success") {
             return res.status(StatusCodes.OK).json({issuerStatus: data.issuerStatus , msg: data.msg})
         }
 
     } catch (error) {
-        if (axios.isAxiosError(error)) {
-            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
-        }
 
+        // Financial Network / Issuer declined the payment
+        if (axios.isAxiosError(error)) {
+
+            try{
+                const {data} = await axios.post(`${targetBinRange.issuer.baseUrl}/api/v1/auth/check-issuer` , {paymentId})
+
+                //console.log("run now 1")
+
+                return res.status(StatusCodes.OK).json({msg: data.msg , issuerStatus:data.issuerStatus})
+
+            }catch (reconciliationError) {
+                
+                try {
+                    const { data } = await axios.post(
+                        `${sourceBinRange.issuer.baseUrl}/api/v1/auth/failed-withdrawal`,
+                        {paymentId , sourceCardNumber}
+                    );
+
+                    console.log(data.issuerStatus , data.msg)
+
+                    return res.status(StatusCodes.OK).json({msg:data.msg , issuerStatus:data.issuerStatus});
+
+                }catch (recoveryError) {
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: "Online Bank recovery failed." });
+        
+                }
+
+            }
+        } 
+        
         throw error
     }
 }
@@ -409,6 +540,8 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
 
 export const financialCheck = async (req : Request , res : Response) => {
     const {paymentId} = req.body 
+
+    console.log("run now 1 check")
 
     const issuer = await prisma.networkPayment.findUnique({
         where:{
@@ -425,6 +558,7 @@ export const financialCheck = async (req : Request , res : Response) => {
 
     try{
         const {data} = await axios.post(`${issuer.issuer.baseUrl}/api/v1/auth/check-issuer` , {paymentId})
+        console.log(data.issuerStatus , data.msg)
 
         if(data.issuerStatus){
             return res.status(StatusCodes.OK).json({issuerStatus:data.issuerStatus , msg:data.msg})

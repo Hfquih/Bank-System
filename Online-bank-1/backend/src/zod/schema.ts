@@ -137,6 +137,10 @@ export const createPaymentSessionSchema = z.object({
     .string()
     .min(1, "User ID is required"),
 
+  orderId: z
+    .string()
+    .min(1, "User ID is required"),
+
   successUrl: z
     .string()
     .url("Success URL must be a valid URL"),

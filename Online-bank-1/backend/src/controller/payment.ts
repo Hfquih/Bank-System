@@ -26,7 +26,7 @@ const prisma = new PrismaClient({
 
 export const createPaymentSession = async (req : Request , res : Response) =>{
 
-    const {amount , currency , userId , successUrl , cancelUrl , webhookUrl} = req.body 
+    const {amount , currency , userId , orderId , successUrl , cancelUrl , webhookUrl} = req.body 
 
     const apiKey = req.header("x-api-key");
     const apiSecret = req.header("x-api-secret");
@@ -88,6 +88,7 @@ export const createPaymentSession = async (req : Request , res : Response) =>{
 
         payment: {
             userReference: userId,
+            orderReference:orderId,
             amount: amount,
             currency,
             successUrl,

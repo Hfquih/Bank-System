@@ -1,0 +1,452 @@
+.create-card-container {
+	flex: 1;
+	min-width: 0;
+	box-sizing: border-box;
+	padding: 43px clamp(25px, 4vw, 65px) 56px;
+	background: var(--issuer-paper, #f7f9f6);
+	color: var(--issuer-ink, #172321);
+	font-family: 'DM Sans', sans-serif;
+}
+
+.create-card-header,
+.create-card-step,
+.create-card-type-content,
+.create-card-brand-content,
+.create-card-preview-heading,
+.create-card-visual-topline,
+.create-card-visual-bottomline,
+.create-card-preview-caption {
+	display: flex;
+	align-items: center;
+}
+
+.create-card-header {
+	justify-content: space-between;
+	gap: 24px;
+	margin: 0 auto 31px;
+	max-width: 1140px;
+}
+
+.create-card-eyebrow {
+	margin: 0 0 9px;
+	color: var(--issuer-green, #2e7c5d);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: .13em;
+}
+
+.create-card-header h1 {
+	margin: 0 0 8px;
+	font: 800 clamp(27px, 3vw, 36px)/1.15 'Manrope', sans-serif;
+	letter-spacing: -.04em;
+}
+
+.create-card-intro {
+	margin: 0;
+	color: var(--issuer-muted, #73807c);
+	font-size: 13px;
+}
+
+.create-card-step {
+	gap: 9px;
+	padding: 10px 13px;
+	border: 1px solid var(--issuer-line, #e5ebe6);
+	border-radius: 999px;
+	background: var(--issuer-white, #fff);
+	color: var(--issuer-ink, #172321);
+	font-size: 10px;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.create-card-step-number {
+	display: grid;
+	width: 24px;
+	height: 24px;
+	place-items: center;
+	border-radius: 50%;
+	background: #e4f2e9;
+	color: var(--issuer-green, #2e7c5d);
+	font-size: 9px;
+}
+
+.create-card-step-divider {
+	width: 1px;
+	height: 15px;
+	background: var(--issuer-line, #e5ebe6);
+}
+
+.create-card-step-muted { color: #a0aaa5; font-weight: 500; }
+
+.create-card-layout {
+	display: grid;
+	grid-template-columns: minmax(0, 1.2fr) minmax(270px, .8fr);
+	gap: clamp(24px, 4vw, 52px);
+	align-items: start;
+	max-width: 1140px;
+	margin: 0 auto;
+}
+
+.create-card-options { min-width: 0; }
+
+.create-card-fieldset {
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.create-card-fieldset legend {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 0;
+	color: var(--issuer-ink, #172321);
+	font: 700 16px 'Manrope', sans-serif;
+	letter-spacing: -.025em;
+}
+
+.create-card-section-number {
+	display: grid;
+	width: 25px;
+	height: 25px;
+	place-items: center;
+	border-radius: 7px;
+	background: #e4f2e9;
+	color: var(--issuer-green, #2e7c5d);
+	font: 700 9px 'DM Sans', sans-serif;
+	letter-spacing: .02em;
+}
+
+.create-card-helper {
+	margin: 8px 0 14px 35px;
+	color: var(--issuer-muted, #73807c);
+	font-size: 11px;
+}
+
+.create-card-type-options,
+.create-card-brand-options {
+	display: grid;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+	gap: 12px;
+}
+
+.create-card-type-option,
+.create-card-brand-option {
+	position: relative;
+	display: block;
+	min-width: 0;
+	cursor: pointer;
+}
+
+.create-card-type-option input,
+.create-card-brand-option input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	clip-path: inset(50%);
+}
+
+.create-card-type-content {
+	min-height: 94px;
+	box-sizing: border-box;
+	gap: 12px;
+	padding: 16px 14px;
+	border: 1px solid var(--issuer-line, #e5ebe6);
+	border-radius: 10px;
+	background: var(--issuer-white, #fff);
+	box-shadow: 0 5px 16px rgba(35, 70, 55, .035);
+	transition: border-color .2s, box-shadow .2s, background .2s, transform .2s;
+}
+
+.create-card-type-option:hover .create-card-type-content,
+.create-card-brand-option:hover .create-card-brand-content {
+	transform: translateY(-1px);
+	border-color: #a8cdb5;
+}
+
+.create-card-type-option input:checked + .create-card-type-content,
+.create-card-brand-option input:checked + .create-card-brand-content {
+	border-color: #70a987;
+	background: #f5faf6;
+	box-shadow: 0 0 0 2px rgba(112, 169, 135, .13);
+}
+
+.create-card-type-option input:focus-visible + .create-card-type-content,
+.create-card-brand-option input:focus-visible + .create-card-brand-content {
+	outline: 3px solid rgba(46, 124, 93, .35);
+	outline-offset: 3px;
+}
+
+.create-card-type-icon {
+	display: grid;
+	flex: 0 0 36px;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border-radius: 10px;
+	font-size: 20px;
+	font-weight: 600;
+}
+
+.create-card-debit-icon { background: #e3f3e8; color: #2e7c5d; }
+.create-card-credit-icon { background: #fff0e9; color: #bd725a; }
+
+.create-card-type-copy,
+.create-card-brand-detail {
+	display: grid;
+	min-width: 0;
+	gap: 5px;
+}
+
+.create-card-type-copy strong,
+.create-card-brand-detail strong {
+	color: var(--issuer-ink, #172321);
+	font-size: 12px;
+	font-weight: 700;
+}
+
+.create-card-type-copy > span,
+.create-card-brand-detail > span {
+	color: var(--issuer-muted, #73807c);
+	font-size: 10px;
+	line-height: 1.4;
+}
+
+.create-card-radio {
+	position: relative;
+	flex: 0 0 16px;
+	width: 16px;
+	height: 16px;
+	box-sizing: border-box;
+	margin-left: auto;
+	border: 1px solid #cbd5ce;
+	border-radius: 50%;
+	background: #fff;
+}
+
+.create-card-type-option input:checked + .create-card-type-content .create-card-radio,
+.create-card-brand-option input:checked + .create-card-brand-content .create-card-radio {
+	border-color: var(--issuer-green, #2e7c5d);
+}
+
+.create-card-type-option input:checked + .create-card-type-content .create-card-radio::after,
+.create-card-brand-option input:checked + .create-card-brand-content .create-card-radio::after {
+	position: absolute;
+	inset: 3px;
+	border-radius: 50%;
+	background: var(--issuer-green, #2e7c5d);
+	content: '';
+}
+
+.create-card-brand-fieldset { margin-top: 28px; }
+
+.create-card-brand-content {
+	min-height: 76px;
+	box-sizing: border-box;
+	gap: 13px;
+	padding: 12px 14px;
+	border: 1px solid var(--issuer-line, #e5ebe6);
+	border-radius: 10px;
+	background: var(--issuer-white, #fff);
+	transition: border-color .2s, box-shadow .2s, background .2s, transform .2s;
+}
+
+.create-card-visa-wordmark {
+	flex: 0 0 42px;
+	color: #1d4f91;
+	font: italic 800 16px 'Manrope', sans-serif;
+	letter-spacing: -.08em;
+}
+
+.create-card-mastercard-mark {
+	position: relative;
+	display: flex;
+	flex: 0 0 42px;
+	align-items: center;
+	height: 24px;
+}
+
+.create-card-mastercard-mark i {
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	background: #e9473f;
+}
+
+.create-card-mastercard-mark i + i {
+	margin-left: -8px;
+	background: #f4a426;
+	mix-blend-mode: multiply;
+}
+
+.create-card-actions { margin-top: 24px; }
+
+.create-card-continue {
+	display: flex;
+	width: 100%;
+	min-height: 45px;
+	justify-content: space-between;
+	align-items: center;
+	padding: 0 16px;
+	border: 0;
+	border-radius: 8px;
+	background: var(--issuer-deep-green, #1d5a43);
+    margin-top: 10px;
+	color: #fff;
+	font: 700 12px 'DM Sans', sans-serif;
+	transition: background .2s, transform .2s;
+}
+
+.create-card-continue:hover { transform: translateY(-1px); background: var(--issuer-green, #2e7c5d); }
+.create-card-continue:focus-visible { outline: 3px solid #8ac9a9; outline-offset: 3px; }
+.create-card-continue span { color: #c9ead8; font-size: 19px; line-height: 1; }
+
+.create-card-security {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 7px;
+	margin: 12px 0 0;
+	color: var(--issuer-muted, #73807c);
+	font-size: 10px;
+}
+
+.create-card-security span { color: var(--issuer-green, #2e7c5d); font-size: 9px; }
+
+.create-card-preview-panel {
+	overflow: hidden;
+	box-sizing: border-box;
+	padding: 23px;
+	border: 1px solid var(--issuer-line, #e5ebe6);
+	border-radius: 13px;
+	background:
+		radial-gradient(ellipse at 85% 4%, rgba(206, 235, 216, .62), transparent 38%),
+		var(--issuer-white, #fff);
+	box-shadow: var(--issuer-shadow, 0 16px 40px rgba(35, 70, 55, .07));
+}
+
+.create-card-preview-heading {
+	justify-content: space-between;
+	margin-bottom: 19px;
+	color: var(--issuer-green, #2e7c5d);
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: .13em;
+}
+
+.create-card-preview-sparkle { color: #83b896; font-size: 18px; }
+
+.create-card-visual {
+	position: relative;
+	overflow: hidden;
+	display: flex;
+	min-height: 200px;
+	flex-direction: column;
+	justify-content: space-between;
+	box-sizing: border-box;
+	padding: 22px 23px 19px;
+	border: 1px solid rgba(255, 255, 255, .16);
+	border-radius: 13px;
+	background: linear-gradient(135deg, #245f48 2%, #174b39 55%, #133b30 100%);
+	color: #fff;
+	box-shadow: 0 14px 28px rgba(29, 90, 67, .2);
+}
+
+.create-card-visual-topline,
+.create-card-visual-bottomline { position: relative; z-index: 1; justify-content: space-between; }
+.create-card-visual-brand { font: 700 10px 'Manrope', sans-serif; letter-spacing: .16em; }
+.create-card-contactless { transform: rotate(90deg); color: #d8e7dc; font-size: 13px; letter-spacing: -5px; }
+
+.create-card-chip {
+	position: relative;
+	z-index: 1;
+	display: grid;
+	width: 31px;
+	height: 24px;
+	grid-template: repeat(2, 1fr) / repeat(2, 1fr);
+	overflow: hidden;
+	border: 1px solid rgba(245, 224, 165, .8);
+	border-radius: 5px;
+	background: linear-gradient(135deg, #ebd99f, #bfae74);
+}
+
+.create-card-chip span { border: 1px solid rgba(105, 93, 61, .3); }
+.create-card-visual-bottomline { align-items: flex-end; }
+.create-card-visual-bottomline > span:first-child { color: #d7e5dc; font-size: 8px; font-weight: 600; letter-spacing: .16em; }
+.create-card-preview-mark { font: 700 10px 'Manrope', sans-serif; letter-spacing: .14em; }
+
+.create-card-orbit {
+	position: absolute;
+	width: 190px;
+	height: 190px;
+	border: 1px solid rgba(205, 232, 215, .12);
+	border-radius: 50%;
+}
+
+.create-card-orbit-one { top: -88px; right: -66px; }
+.create-card-orbit-two { right: -19px; bottom: -148px; width: 240px; height: 240px; }
+
+.create-card-preview-caption {
+	gap: 8px;
+	margin: 14px 0 19px;
+	color: var(--issuer-muted, #73807c);
+	font-size: 10px;
+}
+
+.create-card-preview-dot { width: 6px; height: 6px; border-radius: 50%; background: #6db587; }
+
+.create-card-benefits {
+	display: grid;
+	gap: 0;
+	border-top: 1px solid var(--issuer-line, #e5ebe6);
+}
+
+.create-card-benefits > div {
+	display: flex;
+	align-items: center;
+	gap: 11px;
+	padding: 14px 0;
+}
+
+.create-card-benefits > div + div { border-top: 1px solid var(--issuer-line, #e5ebe6); }
+
+.create-card-benefit-icon {
+	display: grid;
+	flex: 0 0 31px;
+	width: 31px;
+	height: 31px;
+	place-items: center;
+	border-radius: 9px;
+	background: #e7f3eb;
+	color: var(--issuer-green, #2e7c5d);
+	font-size: 17px;
+}
+
+.create-card-benefits > div > span:last-child { display: grid; gap: 4px; }
+.create-card-benefits strong { color: var(--issuer-ink, #172321); font-size: 10px; }
+.create-card-benefits small { color: var(--issuer-muted, #73807c); font-size: 9px; }
+
+@media (max-width: 880px) {
+	.create-card-container { padding: 34px 26px 40px; }
+	.create-card-layout { grid-template-columns: minmax(0, 1fr) minmax(235px, .82fr); gap: 20px; }
+	.create-card-preview-panel { padding: 17px; }
+	.create-card-type-options { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 650px) {
+	.create-card-container { padding: 29px 18px 35px; }
+	.create-card-header { align-items: flex-start; flex-direction: column; gap: 17px; margin-bottom: 24px; }
+	.create-card-layout { grid-template-columns: 1fr; }
+	.create-card-preview-panel { order: -1; }
+	.create-card-visual { min-height: 190px; }
+}
+
+@media (max-width: 390px) {
+	.create-card-type-options,
+	.create-card-brand-options { grid-template-columns: 1fr; }
+	.create-card-type-content { min-height: 78px; }
+}

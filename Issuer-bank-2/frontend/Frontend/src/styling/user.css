@@ -1,0 +1,171 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@600;700;800&display=swap');
+
+:root {
+	--issuer-ink: #172321;
+	--issuer-muted: #73807c;
+	--issuer-paper: #f7f9f6;
+	--issuer-white: #ffffff;
+	--issuer-line: #e5ebe6;
+	--issuer-mint: #c9ead8;
+	--issuer-green: #2e7c5d;
+	--issuer-deep-green: #1d5a43;
+	--issuer-coral: #f4a28d;
+	--issuer-shadow: 0 16px 40px rgba(35, 70, 55, 0.07);
+}
+
+.issuer-user-container {
+	display: flex;
+	min-height: calc(100vh - 88px);
+	margin: 0 -32px -32px;
+	background: var(--issuer-paper);
+	color: var(--issuer-ink);
+	font-family: 'DM Sans', sans-serif;
+}
+
+.issuer-user-container button,
+.issuer-user-container a { font: inherit; }
+.issuer-user-container button { cursor: pointer; }
+.issuer-user-container button:focus-visible,
+.issuer-user-container a:focus-visible { outline: 3px solid #8ac9a9; outline-offset: 3px; }
+
+.issuer-sidebar {
+	display: flex;
+	position: sticky;
+	top: 0;
+	flex: 0 0 224px;
+	height: 100vh;
+	box-sizing: border-box;
+	flex-direction: column;
+	padding: 34px 18px 26px;
+	background: var(--issuer-deep-green);
+	color: #d8eee1;
+}
+
+.issuer-brand-mark {
+	display: grid;
+	width: 36px;
+	height: 36px;
+	margin: 0 14px 52px;
+	place-items: center;
+	border-radius: 11px;
+	background: var(--issuer-mint);
+	color: var(--issuer-deep-green);
+	font: 800 21px 'Manrope', sans-serif;
+}
+
+.issuer-sidebar nav { display: grid; gap: 8px; }
+.issuer-nav-item { 
+	display: flex; 
+	align-items: center; 
+	gap: 14px; 
+	padding: 12px 14px; 
+	border-radius: 8px; 
+	color: #aacbbb; 
+	font-size: 13px; 
+	cursor: pointer;
+	text-decoration: none; 
+	transition: background .2s, color .2s; 
+}
+.issuer-nav-item span { display: grid; width: 19px; place-items: center; color: #8ebba5; font-size: 18px; }
+.issuer-nav-item:hover, .issuer-nav-item.active { background: rgba(201, 234, 216, .14); color: #fff; }
+.issuer-nav-item.active { box-shadow: inset 3px 0 var(--issuer-mint); }
+.issuer-nav-item.active span { color: var(--issuer-mint); }
+.issuer-sidebar-footer { display: flex; align-items: center; gap: 11px; margin: auto 8px 0; padding-top: 20px; border-top: 1px solid rgba(216, 238, 225, .16); font-size: 11px; }
+.issuer-sidebar-footer strong, .issuer-sidebar-footer span { display: block; }
+.issuer-sidebar-footer strong { margin-bottom: 3px; color: #fff; font-size: 12px; }
+.issuer-sidebar-footer span { color: #8ebba5; }
+.issuer-help-icon { display: grid; width: 28px; height: 28px; place-items: center; border: 1px solid #75a88e; border-radius: 50%; color: var(--issuer-mint); font-weight: 700; }
+
+.issuer-dashboard { width: min(100%, 1260px); box-sizing: border-box; padding: 43px clamp(25px, 4vw, 65px) 27px; }
+.issuer-dashboard-header, .issuer-section-heading, .issuer-header-actions, .issuer-profile-chip, .issuer-card-topline, .issuer-balance-meta, .issuer-balance-footer, .issuer-dashboard-footer { display: flex; align-items: center; }
+.issuer-dashboard-header { justify-content: space-between; gap: 24px; margin-bottom: 34px; }
+.issuer-eyebrow { margin: 0 0 9px; color: var(--issuer-green); font-size: 10px; font-weight: 700; letter-spacing: .13em; }
+.issuer-dashboard h1, .issuer-dashboard h2, .issuer-dashboard h3, .issuer-dashboard p { margin-top: 0; }
+.issuer-dashboard h1 { margin-bottom: 8px; font: 800 clamp(26px, 3vw, 36px)/1.15 'Manrope', sans-serif; letter-spacing: -.04em; }
+.issuer-subtitle { margin-bottom: 0; color: var(--issuer-muted); font-size: 13px; }
+.issuer-header-actions { gap: 18px; }
+.issuer-icon-button { position: relative; width: 36px; height: 36px; border: 1px solid var(--issuer-line); border-radius: 50%; background: #fff; color: var(--issuer-green); font-size: 19px; }
+.issuer-notification-dot { position: absolute; top: 7px; right: 7px; width: 5px; height: 5px; border: 2px solid #fff; border-radius: 50%; background: var(--issuer-coral); }
+.issuer-profile-chip { gap: 10px; padding: 4px 0; font-size: 11px; }
+.issuer-avatar { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: var(--issuer-coral); color: #713e32; font-size: 11px; font-weight: 700; }
+.issuer-profile-chip strong, .issuer-profile-chip span { display: block; }
+.issuer-profile-chip strong { margin-bottom: 3px; font-size: 12px; }
+.issuer-profile-chip div:nth-child(2) span { color: var(--issuer-muted); }
+.issuer-chevron { margin-left: 5px; color: var(--issuer-muted); font-size: 16px; }
+
+.issuer-overview-grid { display: grid; grid-template-columns: 1.65fr 1fr 1fr; gap: 14px; margin-bottom: 40px; }
+.issuer-balance-card { min-height: 177px; box-sizing: border-box; padding: 22px 25px 17px; border-radius: 12px; background: var(--issuer-deep-green); color: #fff; box-shadow: var(--issuer-shadow); }
+.issuer-card-topline { justify-content: space-between; color: #b8d9c7; font-size: 9px; font-weight: 700; letter-spacing: .13em; }
+.issuer-card-topline button { border: 0; background: none; color: #b8d9c7; font-size: 13px; }
+.issuer-balance { margin: 20px 0 9px; font: 700 32px 'Manrope', sans-serif; letter-spacing: -.04em; }
+.issuer-balance span { color: #9fcdb4; font-size: 20px; }
+.issuer-balance-meta { gap: 7px; color: #afd1bd; font-size: 10px; }
+.issuer-status-dot { width: 6px; height: 6px; border-radius: 50%; background: #7ed2a4; }
+.issuer-meta-divider { width: 1px; height: 11px; margin: 0 4px; background: #547f6b; }
+.issuer-balance-footer { justify-content: space-between; margin-top: 18px; padding-top: 12px; border-top: 1px solid rgba(216, 238, 225, .16); color: #a7cdb8; font-size: 10px; }
+.issuer-stat-card { min-height: 177px; box-sizing: border-box; padding: 22px 22px; border: 1px solid var(--issuer-line); border-radius: 12px; background: var(--issuer-white); box-shadow: var(--issuer-shadow); }
+.issuer-stat-icon { display: grid; width: 26px; height: 26px; margin-bottom: 20px; place-items: center; border-radius: 8px; font-size: 16px; font-weight: 700; }
+.issuer-stat-icon.green { background: #e1f3e8; color: var(--issuer-green); }
+.issuer-stat-icon.coral { background: #ffebe5; color: #bc6b58; }
+.issuer-stat-card p { margin-bottom: 8px; color: var(--issuer-muted); font-size: 11px; }
+.issuer-stat-card strong { display: block; margin-bottom: 8px; font: 700 21px 'Manrope', sans-serif; letter-spacing: -.03em; }
+.issuer-stat-card small { color: var(--issuer-muted); font-size: 10px; }
+.issuer-stat-card small b { color: var(--issuer-green); font-weight: 700; }
+
+.issuer-quick-actions { margin-bottom: 43px; }
+.issuer-section-heading { justify-content: space-between; gap: 18px; margin-bottom: 19px; }
+.issuer-section-heading h2 { margin-bottom: 0; font: 700 18px 'Manrope', sans-serif; letter-spacing: -.03em; }
+.issuer-text-button { border: 0; background: none; color: var(--issuer-green); font-size: 11px; font-weight: 700; }
+.issuer-text-button span { margin-left: 7px; font-size: 15px; }
+.issuer-action-list { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+.issuer-action { display: flex; min-height: 75px; align-items: center; gap: 11px; padding: 13px 14px; border: 1px solid var(--issuer-line); border-radius: 9px; background: #fff; color: var(--issuer-ink); text-align: left; transition: transform .2s, border-color .2s, box-shadow .2s; }
+.issuer-action:hover { border-color: #acd8bc; box-shadow: var(--issuer-shadow); transform: translateY(-2px); }
+.issuer-action-icon { display: grid; flex: 0 0 29px; height: 29px; place-items: center; border-radius: 8px; background: #edf7ef; color: var(--issuer-green); font-size: 17px; font-weight: 700; }
+.issuer-action strong, .issuer-action small { display: block; }
+.issuer-action strong { margin-bottom: 4px; font-size: 11px; }
+.issuer-action small { color: var(--issuer-muted); font-size: 9px; }
+.issuer-action b { margin-left: auto; color: #9eaaa5; font-size: 16px; }
+.issuer-service-count { color: var(--issuer-muted); font-size: 11px; }
+.issuer-capability-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 13px; }
+.issuer-capability-card { min-height: 236px; box-sizing: border-box; padding: 19px 17px 15px; border: 1px solid var(--issuer-line); border-radius: 10px; background: #fff; transition: border-color .2s, box-shadow .2s; }
+.issuer-capability-card:hover { border-color: #b6d8c2; box-shadow: var(--issuer-shadow); }
+.issuer-capability-number { margin-bottom: 14px; color: #9ac8aa; font: 700 10px 'Manrope', sans-serif; letter-spacing: .08em; }
+.issuer-capability-copy h3 { margin-bottom: 7px; font: 700 14px 'Manrope', sans-serif; letter-spacing: -.02em; }
+.issuer-capability-copy p { min-height: 32px; margin-bottom: 14px; color: var(--issuer-muted); font-size: 10px; line-height: 1.45; }
+.issuer-capability-card ul { margin: 0; padding: 0; border-top: 1px solid var(--issuer-line); list-style: none; }
+.issuer-capability-card li { border-bottom: 1px solid var(--issuer-line); }
+.issuer-capability-card li:last-child { border-bottom: 0; }
+.issuer-capability-card li button { display: flex; width: 100%; justify-content: space-between; gap: 8px; padding: 8px 0; border: 0; background: none; color: #53615c; font-size: 10px; text-align: left; }
+.issuer-capability-card li button:hover { color: var(--issuer-green); }
+.issuer-capability-card li button span { color: #9bb7a7; font-size: 13px; }
+.issuer-dashboard-footer { justify-content: space-between; margin-top: 44px; padding-top: 17px; border-top: 1px solid var(--issuer-line); color: #98a49f; font-size: 10px; }
+.issuer-dashboard-footer b { margin: 0 5px; color: #c1cbc5; }
+
+@media (max-width: 1050px) {
+	.issuer-sidebar { flex-basis: 190px; }
+	.issuer-capability-grid { grid-template-columns: repeat(2, 1fr); }
+	.issuer-action-list { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 720px) {
+	.issuer-user-container { display: block; margin: 0 -18px -18px; }
+	.issuer-sidebar { position: static; width: 100%; height: auto; padding: 14px 16px; }
+	.issuer-brand-mark { display: none; }
+	.issuer-sidebar nav { display: flex; gap: 4px; overflow-x: auto; }
+	.issuer-nav-item { flex: 0 0 auto; padding: 9px 11px; font-size: 11px; }
+	.issuer-nav-item span { display: none; }
+	.issuer-sidebar-footer { display: none; }
+	.issuer-dashboard { padding: 30px 18px 22px; }
+	.issuer-dashboard-header { align-items: flex-start; flex-direction: column; margin-bottom: 28px; }
+	.issuer-header-actions { width: 100%; justify-content: space-between; }
+	.issuer-overview-grid, .issuer-capability-grid { grid-template-columns: 1fr; }
+	.issuer-balance-card, .issuer-stat-card { min-height: auto; }
+	.issuer-stat-card { padding: 17px 19px; }
+	.issuer-stat-icon { float: left; margin: 0 12px 0 0; }
+	.issuer-stat-card p { padding-top: 3px; }
+	.issuer-action-list { grid-template-columns: 1fr; }
+	.issuer-section-heading { align-items: flex-start; }
+	.issuer-service-count { padding-top: 9px; }
+	.issuer-dashboard-footer { align-items: flex-start; flex-direction: column; gap: 8px; }
+}
+

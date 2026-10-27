@@ -73,7 +73,7 @@ export default function Sessions(){
                     msg:data.msg , success:true , error:false 
                 })
 
-                if(data.status!=="completed"){
+                if(data.status!=="success"){
                     setTimeout(()=>{
                         setAlert({
                             msg:"" , success:false , error:false 

@@ -172,8 +172,15 @@ export default function Request(){
         }catch(error){
             console.log(error)
             globalErr(error , setErrors , setAlert)
+            
+            const errors = (error as any).response?.data;
+            setAlert({ msg: errors?.msg || errors?.[0].msg || "Something went wrong", field:"withdraw" , error:true , success:false });
+
+            setTimeout(()=>{
+               setAlert({msg:"" , field:"" , success:false , error:false})
+            },3000)
         }
-    }
+    } 
 
 
     function checkInputs<T extends Record<string, string>>(form: T, formName: keyof typeof errors) {
@@ -253,7 +260,7 @@ export default function Request(){
                             {errors.receive.description && <p className="text-error">{errors.receive.description}</p>}
                         </label>
 
-                        {alert.field==="recieve" && <p className={`field ${alert.success ? "text-success" : alert.error ? "text-error" : ""}`}>{alert.msg}</p>}
+                        {alert.field==="receive" && <p className={`field ${alert.success ? "text-success" : alert.error ? "text-error" : ""}`}>{alert.msg}</p>}
                         <button type="submit">Review request <span>→</span></button>
                     </form>
                 </article>

@@ -1,0 +1,104 @@
+.account-container {
+	flex: 1;
+	min-width: 0;
+	background: var(--issuer-paper);
+	color: var(--issuer-ink);
+	font-family: 'DM Sans', sans-serif;
+}
+
+.account-page {
+	width: min(100%, 1120px);
+	box-sizing: border-box;
+	padding: 43px clamp(25px, 4vw, 65px) 56px;
+}
+
+.account-page-header,
+.account-card-heading,
+.account-inline-status {
+	display: flex;
+	align-items: center;
+}
+
+.account-page-header {
+	justify-content: space-between;
+	gap: 24px;
+	margin-bottom: 34px;
+}
+
+.account-eyebrow,
+.account-label {
+	color: var(--issuer-green);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: .13em;
+}
+
+.account-eyebrow { margin: 0 0 9px; }
+.account-page h1 { margin: 0 0 8px; font: 800 clamp(26px, 3vw, 36px)/1.15 'Manrope', sans-serif; letter-spacing: -.04em; }
+.account-subtitle { margin: 0; color: var(--issuer-muted); font-size: 13px; }
+
+.account-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 9px 13px;
+	border: 1px solid #b9dec7;
+	border-radius: 999px;
+	background: #edf8f0;
+	color: var(--issuer-green);
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: capitalize;
+}
+
+.account-status-dot { width: 7px; height: 7px; border-radius: 50%; background: #64bd85; }
+.account-status-inactive { border-color: #f1c3b7; background: #fff2ee; color: #a35543; }
+.account-status-inactive .account-status-dot { background: #d8755e; }
+
+.account-summary {
+	display: grid;
+	grid-template-columns: 1.45fr 1fr;
+	gap: 14px;
+	margin-bottom: 38px;
+}
+
+.account-balance-panel,
+.account-balance-detail {
+	min-height: 175px;
+	box-sizing: border-box;
+	padding: 25px;
+	border-radius: 12px;
+}
+
+.account-balance-panel { display: flex; flex-direction: column; justify-content: space-between; background: var(--issuer-deep-green); color: #fff; box-shadow: var(--issuer-shadow); }
+.account-balance-panel .account-label { color: #b8d9c7; }
+.account-balance-panel strong { font: 700 clamp(28px, 4vw, 39px) 'Manrope', sans-serif; letter-spacing: -.04em; }
+.account-balance-panel strong small, .account-balance-detail strong small { font-size: 14px; letter-spacing: 0; }
+.account-balance-panel strong small { color: #9fcdb4; }
+.account-number { color: #a7cdb8; font-size: 11px; }
+
+.account-balance-detail { border: 1px solid var(--issuer-line); background: var(--issuer-white); box-shadow: var(--issuer-shadow); }
+.account-balance-detail .account-label { display: block; margin-bottom: 24px; }
+.account-balance-detail strong { display: block; margin-bottom: 8px; font: 700 25px 'Manrope', sans-serif; letter-spacing: -.03em; }
+.account-detail-note { color: var(--issuer-muted); font-size: 11px; }
+
+.account-details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; }
+.account-detail-card { padding: 23px 24px 8px; border: 1px solid var(--issuer-line); border-radius: 12px; background: var(--issuer-white); box-shadow: var(--issuer-shadow); }
+.account-card-heading { gap: 12px; margin-bottom: 19px; }
+.account-card-icon { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; background: #e1f3e8; color: var(--issuer-green); font-size: 19px; }
+.account-card-icon-coral { background: #ffebe5; color: #bc6b58; }
+.account-card-heading .account-label { display: block; margin-bottom: 4px; font-size: 9px; }
+.account-detail-card h2 { margin: 0; font: 700 16px 'Manrope', sans-serif; letter-spacing: -.03em; }
+.account-detail-card dl { margin: 0; }
+.account-detail-card dl > div { display: flex; justify-content: space-between; gap: 18px; padding: 14px 0; border-top: 1px solid var(--issuer-line); }
+.account-detail-card dt { color: var(--issuer-muted); font-size: 11px; }
+.account-detail-card dd { margin: 0; color: var(--issuer-ink); font-size: 11px; font-weight: 700; text-align: right; overflow-wrap: anywhere; }
+.account-inline-status { justify-content: flex-end; gap: 6px; color: var(--issuer-green) !important; text-transform: capitalize; }
+.account-loading { padding: 80px 24px; color: var(--issuer-muted); font-size: 13px; text-align: center; }
+
+@media (max-width: 720px) {
+	.account-page { padding: 30px 18px 35px; }
+	.account-page-header { align-items: flex-start; flex-direction: column; margin-bottom: 28px; }
+	.account-summary, .account-details-grid { grid-template-columns: 1fr; }
+	.account-balance-panel, .account-balance-detail { min-height: 155px; }
+}

@@ -104,6 +104,7 @@ model Payment {
   merchantAccountId Int
   merchantReference String
   userReference    String
+  orderReference    String
   checkoutSessionId String         @unique
   amount            Decimal        @db.Decimal(18, 2)
   currency          String

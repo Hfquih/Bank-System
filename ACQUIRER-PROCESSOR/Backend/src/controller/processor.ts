@@ -41,6 +41,7 @@ export const createPaymentSession = async (req : Request , res : Response) => {
             data : {
                 merchantAccountId : findMerchantAccount.id,
                 merchantReference : merchantAccount.accountCode,
+                orderReference:payment.orderReference,
                 userReference:payment.userReference,
                 checkoutSessionId : checkoutSessionId, 
                 currency : payment.currency,
@@ -80,6 +81,7 @@ export const createPaymentSession = async (req : Request , res : Response) => {
                 merchantAccountId : createMerchantAccount.id,
                 merchantReference : merchantAccount.accountCode,
                 userReference:payment.userReference,
+                orderReference:payment.orderReference,
                 checkoutSessionId : checkoutSessionId,
                 currency : payment.currency,
                 amount : payment.amount,
@@ -145,7 +147,8 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
     try {
         const { data } = await axios.post('http://localhost:6000/api/v1/financial/connect',networkData)
 
-        console.log("run now")
+        console.log("run now 1")
+        console.log(data.issuerStatus)
 
         // Financial Network succeeded
         await prisma.payment.update({
@@ -171,11 +174,12 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
             findPayment.webhookUrl,
             {
                 userReference: findPayment.userReference,
+                orderReference: findPayment.orderReference,
                 status: "APPROVED",
             }
         )
 
-        return res.status(StatusCodes.OK).json({msg: data.msg,redirectUrl: findPayment.successUrl , status:data.issuerStatus})
+        return res.status(StatusCodes.OK).json({msg: data.msg, redirectUrl: findPayment.successUrl , status:data.issuerStatus})
 
     } catch (error) {
 
@@ -185,9 +189,20 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
 
             try{
                 const {data} = await axios.post('http://localhost:6000/api/v1/financial/check' , {paymentId:findPayment.paymentId})
+                console.log("run now 1")
 
 
                 if(data.issuerStatus === "completed"){
+
+                    await prisma.payment.update({
+                        where: {
+                            id: findPayment.id
+                        },
+                        data: {
+                            paymentMethodId: paymentMethod.id,
+                            status: "AUTHORIZED"
+                        }
+                    })
         
                     await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/processor`,
                         {
@@ -201,12 +216,14 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                         {
                             userReference: findPayment.userReference,
                             status: "APPROVED",
+                            orderReference: findPayment.orderReference
                         }
                     )
 
                     return res.status(StatusCodes.OK).json({msg: data.msg , redirectUrl: findPayment.successUrl , status:data.issuerStatus})
                     
                 }else if(data.issuerStatus === "incomplete"){
+                    console.log("run now 2 incomplete")
 
                     await prisma.payment.update({
                         where: {
@@ -218,7 +235,16 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                         }
                     })
 
-                    return res.status(StatusCodes.OK).json({msg: "transaction failed" , status:data.issuerStatus})
+                    await axios.patch(
+                        findPayment.webhookUrl,
+                        {
+                            userReference: findPayment.userReference,
+                            orderReference: findPayment.orderReference,
+                            status: "CANCELED",
+                        }
+                    )
+
+                    return res.status(StatusCodes.OK).json({msg:data.msg , status:data.issuerStatus})
                 }
 
 
@@ -233,10 +259,30 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                     )
 
                     if(data.issuerStatus === "completed"){
+
+                        await prisma.payment.update({
+                            where: {
+                                id: findPayment.id
+                            },
+                            data: {
+                                paymentMethodId: paymentMethod.id,
+                                status: "AUTHORIZED"
+                            }
+                        })
+
+                        await axios.post(`${findPayment.apiBaseUrl}/api/v1/payment/processor`,
+                            {
+                                merchantReference: findPayment.merchantReference,
+                                paymentId: findPayment.paymentId,
+                                issuerStatus:data.issuerStatus
+                            }
+                        )
+
                         await axios.patch(
                             findPayment.webhookUrl,
                         {
                             userReference: findPayment.userReference,
+                            orderReference: findPayment.orderReference,
                             status: "APPROVED",
                         }
                         )
@@ -253,6 +299,15 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                                 status: "CANCELED"
                             }
                         })
+
+                        await axios.patch(
+                            findPayment.webhookUrl,
+                        {
+                            userReference: findPayment.userReference,
+                            orderReference: findPayment.orderReference,
+                            status: "CANCELED",
+                        }
+                        )
                     }   
 
                     return res.status(StatusCodes.OK).json({msg:data.msg , status:data.issuerStatus});
@@ -267,6 +322,15 @@ export const createPaymentMethod = async (req : Request , res : Response) => {
                             status: "PENDING"
                         }
                     })
+
+                    await axios.patch(
+                            findPayment.webhookUrl,
+                        {
+                            userReference: findPayment.userReference,
+                            orderReference: findPayment.orderReference,
+                            status: "PENDING",
+                        }
+                    )
                     
                     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ msg: "Online Bank recovery failed." });
                     

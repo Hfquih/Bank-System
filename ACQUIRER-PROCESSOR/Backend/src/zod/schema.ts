@@ -19,6 +19,7 @@ export const createPaymentSessionSchema = z.object({
 
     payment: z.object({
         userReference: z.string().min(1),
+        orderReference: z.string().min(1),
         amount: z.coerce.number().positive(),
         currency: z.string().length(3).toUpperCase(),
         successUrl: z.string().url(),

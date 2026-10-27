@@ -1,7 +1,7 @@
 import express from "express"
 const router = express.Router()
-import {register , login , logout , getCustomer , getAccount , getTransaction , getRequest , myCard , createTransaction , createRequest , createCard , financialNetwork , updateCustomer , acceptRequest , rejectRequest, verifyCard , onlineBankDeposite , onlineBankwithdrawal , withdrawalRequest , bankWithdrawal , checkIssuer} from "../controller/auth"
-import { registerSchema , loginSchema , updateSchema , moneyOperationSchema , createCardSchema , financialNetworkSchema , withdrawSchema , issuerVerifyCardSchema , issuerDepositWithdrawSchema , networkPaymentSchema} from "../zod/schema"
+import {register , login , logout , getCustomer , getAccount , getTransaction , getRequest , myCard , createTransaction , createRequest , createCard , financialNetwork , updateCustomer , acceptRequest , rejectRequest, verifyCard , onlineBankDeposite , onlineBankwithdrawal , withdrawalRequest , bankWithdrawal , checkIssuer, withdrawalFailed} from "../controller/auth"
+import { registerSchema , loginSchema , updateSchema , moneyOperationSchema , createCardSchema , financialNetworkSchema , withdrawSchemaFirst , withdrawSchemaSecond , issuerVerifyCardSchema , issuerDepositWithdrawSchema , networkPaymentSchema , withdrawalSchemaFailed} from "../zod/schema"
 import { validate } from "../zod/zodMid"
 import {requireAuth ,  authorization } from "../middleware/auth"
 
@@ -36,11 +36,13 @@ router.post('/deposite' , validate(issuerDepositWithdrawSchema) , onlineBankDepo
 
 router.post('/withdrawal' , validate(issuerDepositWithdrawSchema) , onlineBankwithdrawal)
 
-router.post('/withdrawal-isuer' , validate(withdrawSchema) , requireAuth , authorization("admin" , "user") , withdrawalRequest)
+router.post('/withdrawal-isuer' , validate(withdrawSchemaFirst) , requireAuth , authorization("admin" , "user") , withdrawalRequest)
 
-router.post('/bank-withdrawal' , validate(withdrawSchema) , bankWithdrawal)
+router.post('/bank-withdrawal' , validate(withdrawSchemaSecond) , bankWithdrawal)
 
 router.post('/check-issuer' , validate(networkPaymentSchema) , checkIssuer)
+
+router.post('/failed-withdrawal' , validate(withdrawalSchemaFailed) , withdrawalFailed)
 
 router.patch('/update-info' , validate(updateSchema) , requireAuth , authorization("admin" , "user") , updateCustomer)
 

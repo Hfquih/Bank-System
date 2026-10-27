@@ -73,14 +73,20 @@ export const withdrawSchema = z.object({
         .positive("Amount must be greater than 0")
         .finite("Amount must be a valid number"),
 
-    cardNumber: z
+    sourceCardNumber: z
         .string()
         .regex(/^\d{16}$/, "Card number must contain exactly 16 digits"),
+
+    targetCardNumber: z
+        .string()
+        .regex(/^\d{16}$/, "Card number must contain exactly 16 digits"),    
 
     description: z
         .string()
         .trim()
         .min(1, "Description is required"),
+    
+    paymentId: z.string().min(1, "Payment ID is required"),
 });
 
 

@@ -547,90 +547,6 @@ export const rejectRequest = async (req:Request , res:Response) => {
 }
 
 
-export const withdrawalRequest = async (req:Request , res:Response) => {
-    const {amount , cardNumber , description} = req.body
-
-    const customerId = (req.user as { id: number }).id
-
-    const account = await prisma.account.findFirst({
-      where:{
-        customerId:customerId,
-        status:"ACTIVE"
-      }
-    })
-
-    if(!account){
-      throw new NotFound("account not found")
-    }
-
-    if(account.balance.lt(amount)) {
-        throw new BadRequest("Insufficient balance")
-    }
-
-    const reference = `TRX-${crypto.randomUUID()}`;
-
-    try{
-        const {data} = await axios.post("http://localhost:6000/api/v1/financial/bank-withdrawal" , {amount , cardNumber , description})
-
-        if(data.status==="success"){
-          await prisma.$transaction(async (tx)=>{
-            const transaction = await tx.transaction.create({
-              data:{
-                reference:reference,
-                type:"withdrawal",
-                amount,
-                currency:"USD",
-                description
-              }
-            })
-
-            await tx.ledgerEntry.create({
-              data:{
-                transactionId:transaction.id,
-                accountId:account.id,
-                type:"debit",
-                amount:transaction.amount,
-                currency:transaction.currency
-              }
-            })
-
-            await tx.account.update({
-              where:{
-                id: account.id 
-              },
-              data:{
-                balance:{
-                  decrement:amount
-                },
-                availableBalance:{
-                  decrement:amount
-                }
-              }
-            })
-
-            await tx.transaction.update({
-              where:{
-                id:transaction.id 
-              },
-              data:{
-                status:"completed"
-              }
-            })
-          })
-
-          return res.status(StatusCodes.OK).json({msg:data.msg})
-        }
-
-    }catch (error) {
-        if (axios.isAxiosError(error)) {
-            return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
-        }
-
-        throw error
-    }
-}
-
-
 // card section //
 
 export const createCard = async (req:Request , res:Response) => {
@@ -692,6 +608,12 @@ export const createCard = async (req:Request , res:Response) => {
 
 export const financialNetwork = async (req : Request , res : Response) => {
   const {payment , card} = req.body
+
+  console.log("run now 1")
+
+  if(payment){
+    throw new BadRequest("test error")
+  }
 
   const findAccount = await prisma.card.findFirst({
     where:{
@@ -963,12 +885,216 @@ export const onlineBankwithdrawal = async (req:Request , res:Response) => {
 
 }
 
+
+
+
+
+
+export const withdrawalRequest = async (req:Request , res:Response) => {
+    const {amount , cardNumber , description} = req.body
+
+    console.log("run now 1")
+    const customerId = (req.user as { id: number }).id
+
+    const account = await prisma.account.findFirst({
+      where:{
+        customerId:customerId,
+        status:"ACTIVE"
+      }
+    })
+
+    if(!account){
+      throw new NotFound("account not found")
+    }
+
+    if(account.balance.lt(amount)) {
+        throw new BadRequest("Insufficient balance")
+    }
+
+    const sourceNumber = await prisma.card.findFirst({
+      where:{
+        accountId:account.id,
+        status:"ACTIVE",
+        type:"DEBIT"
+      }
+    })
+
+    if(!sourceNumber){
+      throw new NotFound("card number not found")
+    }
+
+    const reference = `TRX-${crypto.randomUUID()}`;
+    const paymentId = crypto.randomUUID();
+
+    const transaction = await prisma.transaction.create({
+      data:{
+        reference:reference,
+        type:"withdrawal",
+        amount,
+        currency:"USD",
+        description,
+        paymentId:paymentId
+      }
+    })
+
+    try{
+        const {data} = await axios.post("http://localhost:6000/api/v1/financial/bank-withdrawal" , {amount , targetCardNumber:cardNumber , description, sourceCardNumber:sourceNumber.cardNumber , paymentId:transaction.paymentId})
+
+        if(!data.issuerStatus || !data.msg){
+
+            let issuerStatusCheck
+
+            try{
+                const {data} = await axios.post('http://localhost:6000/api/v1/financial/check' , {paymentId:transaction.paymentId})
+
+                issuerStatusCheck = data.issuerStatus
+            }catch(error){
+
+                await prisma.transaction.update({
+                    where:{
+                        id:transaction.id 
+                    },
+                    data:{
+                        status:"processing"
+                    }
+                })
+
+                return res.status(StatusCodes.ACCEPTED).json({
+                    msg: "The deposit outcome is still being reconciled."
+                })
+            }
+
+            if(issuerStatusCheck==="incomplete"){
+                await prisma.transaction.update({
+                    where:{
+                        id:transaction.id 
+                    },
+                    data:{
+                        status:"failed"
+                    }
+                })
+
+                res.status(StatusCodes.OK).json({msg:"transaction failed"})
+            }
+
+            await prisma.$transaction(async (tx)=>{
+                await tx.transaction.update({
+                    where:{
+                        id:transaction.id
+                    },
+                    data:{
+                        status:"completed"
+                    }
+                })
+
+                await tx.ledgerEntry.create({
+                    data:{
+                        transactionId:transaction.id,
+                        accountId:account.id,
+                        type:"credit",
+                        amount:transaction.amount,
+                        currency:transaction.currency
+                    }
+                })
+
+                await tx.account.update({
+                    where:{
+                        id:account.id 
+                    },
+                    data:{
+                        balance:{
+                            decrement: transaction.amount
+                        },
+                        availableBalance:{
+                            decrement:transaction.amount
+                        }
+                    }
+                })
+            })
+
+             res.status(StatusCodes.OK).json({msg:"deposite successed"})
+        }
+
+
+        if(data.issuerStatus==="success"){
+          await prisma.$transaction(async (tx)=>{
+
+            await tx.ledgerEntry.create({
+              data:{
+                transactionId:transaction.id,
+                accountId:account.id,
+                type:"debit",
+                amount:transaction.amount,
+                currency:transaction.currency
+              }
+            })
+
+            await tx.account.update({
+              where:{
+                id: account.id 
+              },
+              data:{
+                balance:{
+                  decrement:amount
+                },
+                availableBalance:{
+                  decrement:amount
+                }
+              }
+            })
+
+            await tx.transaction.update({
+              where:{
+                id:transaction.id 
+              },
+              data:{
+                status:"completed"
+              }
+            })
+          })
+
+          return res.status(StatusCodes.OK).json({msg:data.msg})
+
+        }else if(data.issuerStatus==="incomplete"){
+            await prisma.transaction.update({
+                where:{
+                    id:transaction.id 
+                },
+                data:{
+                    status:"failed"
+                }
+            })
+
+            return res.status(StatusCodes.OK).json({msg : data.msg})
+        }
+
+    }catch (error) {
+      await prisma.transaction.update({
+        where:{
+          id:transaction.id 
+        },
+        data:{
+          status:"processing"
+        }
+      })
+      if (axios.isAxiosError(error)) {
+        return res.status(error.response?.status || StatusCodes.INTERNAL_SERVER_ERROR).json(error.response?.data || {msg: "Internal server error"})
+      }
+
+      throw error
+    }
+}
+
 export const bankWithdrawal = async (req : Request , res : Response) => {
-  const {amount , cardNumber , description } = req.body
+  const {amount , targetCardNumber , description , paymentId} = req.body
+
+  if(targetCardNumber){
+    throw new BadRequest("test error")
+  }
 
   const findAccount = await prisma.card.findFirst({
     where:{
-      cardNumber:cardNumber,
+      cardNumber:targetCardNumber,
     },
     include:{
       account:true 
@@ -979,18 +1105,17 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
     throw new NotFound("incorrect card info")
   }
 
-  const reference = `TRX-${crypto.randomUUID()}`;
+  const transaction = await prisma.transaction.findUnique({
+    where:{
+      paymentId:paymentId,
+    }
+  })
+
+  if(!transaction){
+    throw new NotFound("transaction not found")
+  }
 
   await prisma.$transaction(async (tx)=>{
-    const transaction = await tx.transaction.create({
-      data:{
-        reference:reference,
-        type:"payment",
-        amount:amount,
-        currency:"USD",
-        description:description,
-      }
-    })
 
     await tx.ledgerEntry.create({
       data:{
@@ -1027,7 +1152,69 @@ export const bankWithdrawal = async (req : Request , res : Response) => {
 
   })
   
-  res.status(StatusCodes.OK).json({msg:"withdrawal success" , status:"success"})
+  res.status(StatusCodes.OK).json({msg:"withdrawal success" , issuerStatus:"success"})
+}
+
+
+export const withdrawalFailed = async (req:Request , res:Response) => {
+    const {sourceCardNumber , paymentId} = req.body 
+
+    console.log("run now 2")
+
+    const account = await prisma.card.findUnique({
+        where:{
+            cardNumber : sourceCardNumber
+        },
+        include:{
+          account:true
+        }
+    })
+
+    if(!account){
+        throw new NotFound("account not found")
+    }
+
+    const transaction = await prisma.transaction.findUnique({
+        where:{
+            paymentId:paymentId
+        }
+    })
+
+    if(!transaction){
+        throw new NotFound("transaction not found")
+    }
+
+    let issuerStatusCheck
+    let msg
+
+    try{
+        const {data} = await axios.post("http://localhost:6000/api/v1/financial/check" , {paymentId})
+
+        issuerStatusCheck=data.issuerStatus
+        msg=data.msg
+    }catch(error){
+        await prisma.transaction.update({
+            where:{
+                id:transaction.id 
+            },
+            data:{
+                status:"processing"
+            }
+        })
+
+        return res.status(StatusCodes.ACCEPTED).json({
+            status: "processing",
+            msg: "The deposit outcome is still being reconciled."
+        })
+    }
+
+    if(issuerStatusCheck==="incomplete"){
+        res.status(StatusCodes.OK).json({msg:msg , issuerStatus:issuerStatusCheck})
+    }
+
+    if(issuerStatusCheck==="success"){
+        res.status(StatusCodes.OK).json({msg:msg , issuerStatus:issuerStatusCheck})
+    }
 }
 
 
@@ -1041,7 +1228,8 @@ export const checkIssuer = async (req : Request , res : Response) => {
   })
 
   if(!transaction){
-    return res.status(StatusCodes.OK).json({issuerStatus:"incomplete" , msg:"transaction failed"})
+    console.log("run now 2")
+    return res.status(StatusCodes.OK).json({issuerStatus:"incomplete" , msg:"transaction failed show"})
   }
 
   res.status(StatusCodes.OK).json({issuerStatus:transaction.status , msg:"payment success"})
